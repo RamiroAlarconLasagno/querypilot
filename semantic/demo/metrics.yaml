@@ -18,7 +18,7 @@ metrics:
       relations:
         - from: cmp_cab
           to: cmp_det
-          on: cmp_cab.nro_int = cmp_det.nro_int
+          condition: cmp_cab.nro_int = cmp_det.nro_int
       temporal_field: cmp_cab.f_emis
       exclusions:
         - cmp_cab.est_cod <> 9 # 9 = anulado
@@ -37,7 +37,7 @@ metrics:
       relations:
         - from: cmp_cab
           to: cmp_det
-          on: cmp_cab.nro_int = cmp_det.nro_int
+          condition: cmp_cab.nro_int = cmp_det.nro_int
       temporal_field: cmp_cab.f_emis
       exclusions:
         - cmp_cab.est_cod <> 9
