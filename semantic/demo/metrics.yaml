@@ -2,71 +2,71 @@
 # Definicion de negocio y receta fisica JUNTAS, en el mismo bloque.
 # Separarlas invitaria a que divergieran.
 
-metricas:
-  - canonico: facturacion_neta
-    nombre_negocio: Facturacion
-    definicion: Ventas menos notas de credito, sin impuestos.
-    sinonimos: [ventas, ingresos, facturado, facturacion]
-    acepcion_por_defecto_de: [ventas, ingresos]
-    unidad: ARS
-    agregaciones: [suma]
-    dimensiones_combinables: [cliente, region, producto, vendedor, categoria]
-    granularidad_minima: dia
-    fisico:
-      fuente: cmp_cab
-      medida: suma(cmp_det.imp_neto)
-      relaciones:
-        - de: cmp_cab
-          a: cmp_det
-          por: cmp_cab.nro_int = cmp_det.nro_int
-      campo_temporal: cmp_cab.f_emis
-      exclusiones:
-        - cmp_cab.est_cod <> 9   # 9 = anulado
+metrics:
+  - id: net_revenue
+    business_name: Facturacion
+    definition: Ventas menos notas de credito, sin impuestos.
+    synonyms: [ventas, ingresos, facturado, facturacion]
+    default_sense_of: [ventas, ingresos]
+    unit: ARS
+    aggregations: [sum]
+    combinable_dimensions: [customer, region, product, salesperson, category]
+    min_granularity: day
+    physical:
+      source: cmp_cab
+      measure: sum(cmp_det.imp_neto)
+      relations:
+        - from: cmp_cab
+          to: cmp_det
+          on: cmp_cab.nro_int = cmp_det.nro_int
+      temporal_field: cmp_cab.f_emis
+      exclusions:
+        - cmp_cab.est_cod <> 9 # 9 = anulado
 
-  - canonico: unidades_vendidas
-    nombre_negocio: Unidades vendidas
-    definicion: Cantidad de unidades facturadas, neta de devoluciones.
-    sinonimos: [unidades, cantidad, volumen]
-    unidad: unidades
-    agregaciones: [suma]
-    dimensiones_combinables: [cliente, region, producto, vendedor, categoria]
-    granularidad_minima: dia
-    fisico:
-      fuente: cmp_cab
-      medida: suma(cmp_det.cant)
-      relaciones:
-        - de: cmp_cab
-          a: cmp_det
-          por: cmp_cab.nro_int = cmp_det.nro_int
-      campo_temporal: cmp_cab.f_emis
-      exclusiones:
+  - id: units_sold
+    business_name: Unidades vendidas
+    definition: Cantidad de unidades facturadas, neta de devoluciones.
+    synonyms: [unidades, cantidad, volumen]
+    unit: units
+    aggregations: [sum]
+    combinable_dimensions: [customer, region, product, salesperson, category]
+    min_granularity: day
+    physical:
+      source: cmp_cab
+      measure: sum(cmp_det.cant)
+      relations:
+        - from: cmp_cab
+          to: cmp_det
+          on: cmp_cab.nro_int = cmp_det.nro_int
+      temporal_field: cmp_cab.f_emis
+      exclusions:
         - cmp_cab.est_cod <> 9
 
-  - canonico: operaciones
-    nombre_negocio: Operaciones
-    definicion: Cantidad de comprobantes de venta emitidos.
-    sinonimos: [comprobantes, facturas, transacciones]
-    unidad: operaciones
-    agregaciones: [conteo]
-    dimensiones_combinables: [cliente, region, vendedor]
-    granularidad_minima: dia
-    fisico:
-      fuente: cmp_cab
-      medida: conteo_distinto(cmp_cab.nro_int)
-      campo_temporal: cmp_cab.f_emis
-      exclusiones:
+  - id: operations
+    business_name: Operaciones
+    definition: Cantidad de comprobantes de venta emitidos.
+    synonyms: [comprobantes, facturas, transacciones]
+    unit: operations
+    aggregations: [count]
+    combinable_dimensions: [customer, region, salesperson]
+    min_granularity: day
+    physical:
+      source: cmp_cab
+      measure: distinct_count(cmp_cab.nro_int)
+      temporal_field: cmp_cab.f_emis
+      exclusions:
         - cmp_cab.est_cod <> 9
 
-  - canonico: costo_unitario
-    nombre_negocio: Costo unitario
-    definicion: Costo de reposicion del articulo al momento de la venta.
-    sinonimos: [costo]
-    unidad: ARS
-    agregaciones: [promedio]
-    dimensiones_combinables: [producto, categoria]
-    granularidad_minima: dia
-    sensible: true
-    fisico:
-      fuente: cmp_det
-      medida: promedio(cmp_det.cost_rep)
-      campo_temporal: cmp_cab.f_emis
+  - id: unit_cost
+    business_name: Costo unitario
+    definition: Costo de reposicion del articulo al momento de la venta.
+    synonyms: [costo]
+    unit: ARS
+    aggregations: [average]
+    combinable_dimensions: [product, category]
+    min_granularity: day
+    sensitive: true
+    physical:
+      source: cmp_det
+      measure: average(cmp_det.cost_rep)
+      temporal_field: cmp_cab.f_emis

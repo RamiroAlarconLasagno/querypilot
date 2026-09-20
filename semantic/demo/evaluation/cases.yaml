@@ -8,99 +8,100 @@
 # 10% con premisa, 10% multiples objetivos, 10% fuera de alcance.
 # CONGELAR antes de la primera corrida. No modificar segun resultados.
 
-casos:
+cases:
   - id: c001
-    categoria: directa
-    pregunta: "¿Cuanto facturamos en julio?"
-    esperado:
-      objetivos:
-        - objetivo: consultar_metrica
-          metrica: facturacion_neta
+    category: direct
+    question: "¿Cuanto facturamos en julio?"
+    expected:
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
           temporal: "julio"
 
   - id: c002
-    categoria: directa
-    pregunta: "Compara la facturacion de julio contra junio"
-    esperado:
-      objetivos:
-        - objetivo: comparar
-          metrica: facturacion_neta
+    category: direct
+    question: "Compara la facturacion de julio contra junio"
+    expected:
+      objectives:
+        - objective: compare
+          metric: net_revenue
           temporal: ["julio", "junio"]
 
   - id: c003
-    categoria: premisa
-    pregunta: "¿Por que cayo la facturacion en julio?"
-    esperado:
-      objetivos:
-        - objetivo: explicar_variacion
-          metrica: facturacion_neta
+    category: premise
+    question: "¿Por que cayo la facturacion en julio?"
+    expected:
+      objectives:
+        - objective: explain_variance
+          metric: net_revenue
           temporal: ["julio", "junio"]
-          premisas: ["existe una caida entre ambos periodos"]
+          premises: ["existe una caida entre ambos periodos"]
 
   - id: c004
-    categoria: ambiguedad_material
-    pregunta: "Mostrame los mejores clientes de este trimestre"
-    esperado:
-      ambiguedad: criterio de "mejores"
-      opciones: [facturacion_neta, unidades_vendidas, operaciones]
-      plan: no_se_propone
+    category: material_ambiguity
+    question: "Mostrame los mejores clientes de este trimestre"
+    expected:
+      ambiguity: criterio de "mejores"
+      options: [net_revenue, units_sold, operations]
+      plan: not_proposed
 
   - id: c005
-    categoria: directa
-    pregunta: "Ventas por region en el ano"
-    esperado:
-      objetivos:
-        - objetivo: desglosar
-          metrica: facturacion_neta      # acepcion por defecto de "ventas"
+    category: direct
+    question: "Ventas por region en el ano"
+    expected:
+      objectives:
+        - objective: breakdown
+          metric: net_revenue # acepcion por defecto de "ventas"
           dimension: region
           temporal: "el ano"
 
   - id: c006
-    categoria: multiples_objetivos
-    pregunta: "Compara julio contra junio y decime tambien el ranking anual de clientes"
-    esperado:
-      objetivos:
-        - objetivo: comparar
-          metrica: facturacion_neta
+    category: multiple_objectives
+    question: "Compara julio contra junio y decime tambien el ranking anual de clientes"
+    expected:
+      objectives:
+        - objective: compare
+          metric: net_revenue
           temporal: ["julio", "junio"]
-        - objetivo: rankear
-          metrica: facturacion_neta
-          dimension: cliente
+        - objective: rank
+          metric: net_revenue
+          dimension: customer
           temporal: "el ano"
-          dependencia: null            # NO hereda "julio" del primero
+          dependency: null # NO hereda "julio" del primero
 
   - id: c007
-    categoria: continuacion
-    pregunta: "Saca esos tres y compara de nuevo"
-    contexto_previo: descomposicion por cliente con tres contribuyentes principales
-    esperado:
-      continuidad: continuacion
-      hereda: [metrica, periodos, dimension]
-      filtros: ["cliente distinto de los tres identificados"]
+    category: continuation
+    question: "Saca esos tres y compara de nuevo"
+    previous_context: descomposicion por cliente con tres contribuyentes principales
+    expected:
+      continuity: continuation
+      inherits: [metric, periods, dimension]
+      filters: ["cliente distinto de los tres identificados"]
 
   - id: c008
-    categoria: fuera_de_alcance
-    pregunta: "¿Nos conviene abrir una sucursal en Cordoba?"
-    esperado:
-      fuera_de_alcance: requiere proyeccion y criterio de negocio
-      alternativas_ofrecidas: [facturacion por region, evolucion mensual, ranking por region]
+    category: out_of_scope
+    question: "¿Nos conviene abrir una sucursal en Cordoba?"
+    expected:
+      out_of_scope: requiere proyeccion y criterio de negocio
+      offered_alternatives:
+        [facturacion por region, evolucion mensual, ranking por region]
 
   - id: c009
-    categoria: fuera_de_alcance
-    pregunta: "¿Cual fue el margen por producto?"
-    esperado:
+    category: out_of_scope
+    question: "¿Cual fue el margen por producto?"
+    expected:
       # Bajo contexto restringido el concepto no esta en el catalogo entregado:
       # se informa como limitacion de alcance SIN nombrar el concepto.
-      rechazo: concepto_no_disponible_en_contexto
-      no_debe_nombrar: [margen, costo_unitario]
+      rejection: concept_not_available_in_context
+      must_not_name: [margin, unit_cost]
 
   - id: c010
-    categoria: directa
-    pregunta: "¿Cuantas operaciones hicimos la semana pasada?"
-    esperado:
-      objetivos:
-        - objetivo: consultar_metrica
-          metrica: operaciones
+    category: direct
+    question: "¿Cuantas operaciones hicimos la semana pasada?"
+    expected:
+      objectives:
+        - objective: query_metric
+          metric: operations
           temporal: "la semana pasada"
 
   # --- Faltan 50 casos. Se escriben ANTES de terminar el artefacto semantico,

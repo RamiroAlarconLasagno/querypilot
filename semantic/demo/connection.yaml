@@ -2,35 +2,35 @@
 # Identidad de la conexion, calendario del negocio y umbrales.
 # El artefacto es la fuente de verdad; la version se deriva del contenido.
 
-conexion: demo
-descripcion: Distribuidora mayorista de demostracion. Esquema deliberadamente incomodo.
-motor: postgresql
+id: demo
+description: Distribuidora mayorista de demostracion. Esquema deliberadamente incomodo.
+engine: postgresql
 
-calendario:
-  tipo: civil          # civil | fiscal
-  mes_cierre: 12
-  inicio_semana: lunes
+calendar:
+  type: calendar # calendar | fiscal
+  closing_month: 12
+  week_start: monday
 
-umbrales:
-  # Relacion obligatoria: contexto < vista_previa < materializacion
-  contexto_filas: 20
-  vista_previa_filas: 100
-  vista_previa_columnas: 20
-  materializacion_filas: 50000
-  conjuntos_activos_por_sesion: 5
-  conjuntos_activos_mb: 50
-  cardinalidad_maxima_dimension: 5000
-  cobertura_minima_explicacion: 0.70
-  frescura_periodo_cerrado_horas: 24
-  frescura_periodo_abierto_minutos: 15
-  limite_tiempo_consulta_segundos: 30
-  presupuesto_turno_segundos: 90
-  presupuesto_llamadas_modelo: 5
-  filas_examinadas_para_confirmar: 1000000
+thresholds:
+  # Relacion obligatoria: context_rows < preview_rows < materialization_rows
+  context_rows: 20
+  preview_rows: 100
+  preview_columns: 20
+  materialization_rows: 50000
+  active_datasets_per_session: 5
+  active_datasets_mb: 50
+  max_dimension_cardinality: 5000
+  min_explanation_coverage: 0.70
+  closed_period_freshness_hours: 24
+  open_period_freshness_minutes: 15
+  query_time_limit_seconds: 30
+  turn_budget_seconds: 90
+  model_calls_budget: 5
+  rows_examined_to_confirm: 1000000
 
-sensibilidad:
+sensitivity:
   # Conceptos sensibles y bajo que condicion. Alimenta a Contexto de acceso.
-  - concepto: costo_unitario
-    condicion: rol != administrador
-  - concepto: margen
-    condicion: rol != administrador
+  - concept: unit_cost
+    condition: role != admin
+  - concept: margin
+    condition: role != admin

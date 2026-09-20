@@ -16,22 +16,25 @@ La seccion 11 registra el resultado de aplicar esa regla a los diez contratos.
 
 ## 1. Nomenclatura
 
-Aplicacion de la convencion ya fijada: **ingles donde el identificador nombra una
-construccion del programa, espanol donde nombra un concepto del negocio del cliente**.
+Aplicacion de la convencion fijada en `16_instrucciones_ia.md` seccion 7: **ingles para
+todo lo que el programa interpreta** -- nombres de campo, identificadores canonicos,
+claves de YAML/JSON, valores de enumeracion, rutas de la API HTTP, nombres de evento --
+y **espanol reservado para lo que lee una persona**.
 
-| Concepto del diseno | Clase | Idioma de sus **valores** |
+| Concepto del diseno | Clase | Campos que siguen en espanol |
 |---|---|---|
-| Peticion de datos | `DataRequest` | Espanol (`facturacion_neta`, `cliente`) |
-| Descriptor de cobertura | `CoverageDescriptor` | Espanol |
-| Hecho | `Fact` | Espanol |
-| Plan de analisis | `AnalysisPlan` | Espanol |
-| Contexto de acceso resuelto | `ResolvedAccessContext` | Espanol |
-| Respuesta | `Answer` | Espanol |
-| Rechazo | `Rejection` | — |
-| Sugerencia de investigacion | `ResearchSuggestion` | Espanol |
+| Peticion de datos | `DataRequest` | Ninguno: `metrics` y `dimensions` llevan identificadores canonicos en ingles |
+| Descriptor de cobertura | `CoverageDescriptor` | Ninguno |
+| Hecho | `Fact` | Ninguno |
+| Plan de analisis | `AnalysisPlan` | Ninguno |
+| Contexto de acceso resuelto | `ResolvedAccessContext` | Ninguno |
+| Respuesta | `Answer` | `Assertion.text`: prosa redactada para el usuario |
+| Rechazo | `Rejection` | `detail`, cuando existe: mensaje para el usuario |
+| Sugerencia de investigacion | `ResearchSuggestion` | La pregunta sugerida: se le presenta al usuario |
 
-Los **nombres de campo** son ingles; los **valores del dominio** son espanol. Una metrica
-se declara como `metric: "facturacion_neta"`, no como `metrica: "net_revenue"`.
+Una metrica se declara como `metric: "net_revenue"`, no como `metric: "facturacion_neta"`.
+Sus sinonimos reconocidos si van en espanol, porque son lenguaje natural de entrada:
+`synonyms: ["facturacion", "ventas netas"]`.
 
 ---
 
@@ -139,7 +142,7 @@ Fact
   unit:           str | None
   scope:          FactScope    universo, filtros y alcance autorizado
   captured_at:    datetime
-  evidence:       EvidenceKind original | reconstruida
+  evidence:       EvidenceKind original | reconstructed
   invocation_id:  str
 ```
 
@@ -171,8 +174,8 @@ PlanStep
   arguments:    dict[str, DomainValue]
   condition:    Condition | None
   derives_from: list[str]          pasos cuyos hechos consume  -> coherencia de captura
-  state:        StepState          pendiente | omitido | iniciado | completado
-                                   | rechazado | no_ejecutado
+  state:        StepState          pending | skipped | started | completed
+                                   | rejected | not_executed
   attempt_id:   str | None
 
 Condition
@@ -224,7 +227,7 @@ definicion valida la salida y restringe la generacion; no pueden divergir.
 ```
 InterpretationOutput
   objective_proposals:  list[ObjectiveProposal]   maximo configurable
-  continuity:           Continuity                nueva | continuacion + que hereda
+  continuity:           Continuity                new | continuation + inherited scope
   concepts:             list[ConceptMapping]      canonico + expresion original
   time_expressions:     list[str]                 SIN resolver
   premises:             list[str]
@@ -262,16 +265,16 @@ escribir una fecha.
 
 | Metodo | Ruta | Proposito |
 |---|---|---|
-| POST | `/conversaciones` | Abrir conversacion sobre una conexion |
-| GET | `/conversaciones/{id}` | Estado analitico vigente e historial |
-| POST | `/conversaciones/{id}/analisis` | Preguntar. Devuelve `Answer` completa |
-| GET | `/analisis/{id}` | Recuperar resultado |
-| GET | `/analisis/{id}/eventos` | Canal SSE de progreso |
-| POST | `/analisis/{id}/aclaracion` | Responder una aclaracion pendiente |
-| POST | `/analisis/{id}/reanudar` | Reanudar un turno recuperable |
-| GET | `/conjuntos/{id}` | Pagina de un conjunto |
-| GET | `/conjuntos/{id}/exportacion` | Exportacion completa |
-| GET | `/conexiones` | Conexiones permitidas |
+| POST | `/conversations` | Abrir conversacion sobre una conexion |
+| GET | `/conversations/{id}` | Estado analitico vigente e historial |
+| POST | `/conversations/{id}/analyses` | Preguntar. Devuelve `Answer` completa |
+| GET | `/analyses/{id}` | Recuperar resultado |
+| GET | `/analyses/{id}/events` | Canal SSE de progreso |
+| POST | `/analyses/{id}/clarification` | Responder una aclaracion pendiente |
+| POST | `/analyses/{id}/resume` | Reanudar un turno recuperable |
+| GET | `/datasets/{id}` | Pagina de un conjunto |
+| GET | `/datasets/{id}/export` | Exportacion completa |
+| GET | `/connections` | Conexiones permitidas |
 
 **Autenticacion:** clave de API por usuario en cabecera, en toda la superficie. Sin
 superficie anonima. **Idempotencia:** clave opcional en preguntar y exportar.
@@ -280,66 +283,83 @@ superficie anonima. **Idempotencia:** clave opcional en preguntar y exportar.
 
 ```json
 {
-  "turno_id": "t_58",
-  "estado": "respondida",
-  "secciones": [
+  "turn_id": "t_58",
+  "state": "answered",
+  "sections": [
     {
-      "objetivo_id": "obj_1",
-      "objetivo": "explicar_variacion",
-      "estado": "satisfecho",
-      "afirmaciones": [
+      "objective_id": "obj_1",
+      "objective": "explain_variance",
+      "state": "satisfied",
+      "assertions": [
         {
           "id": "a1",
-          "tipo": "dato",
-          "texto": "La facturacion neta de julio fue 4176900.00 ARS frente a 4812400.00 en junio, una caida de 635500.00 (-13.2 %).",
-          "evidencia": ["h1", "h2", "h3", "h4"]
+          "type": "data",
+          "text": "La facturacion neta de julio fue 4176900.00 ARS frente a 4812400.00 en junio, una caida de 635500.00 (-13.2 %).",
+          "evidence": ["h1", "h2", "h3", "h4"]
         }
       ]
     }
   ],
-  "alcance": {
-    "periodo": "2026-06-01/2026-07-31",
-    "definiciones": ["facturacion = ventas menos notas de credito"],
-    "universo": "todos los clientes",
-    "captura": {"desde": "2026-08-15T16:41:00-03:00", "hasta": "2026-08-15T16:48:00-03:00"},
-    "evidencia": "original",
-    "version_semantica": "sem_v7"
+  "scope": {
+    "period": "2026-06-01/2026-07-31",
+    "definitions": ["facturacion neta = ventas menos notas de credito"],
+    "universe": "todos los clientes dentro de tu alcance autorizado",
+    "capture": {"from": "2026-08-15T16:41:00-03:00", "to": "2026-08-15T16:48:00-03:00"},
+    "evidence": "original",
+    "semantic_version": "sem_v7"
   },
-  "origen_redaccion": "sintesis_validada",
-  "origen_analisis": "reanudado",
-  "sugerencias": [],
-  "conjuntos": [
-    {"id": "ds_311", "filas": 1240, "columnas": 5,
-     "vista_previa_parcial": true, "exportable": true,
-     "captura": "2026-08-15T16:48:00-03:00"}
+  "drafting_origin": "validated_synthesis",
+  "analysis_origin": "resumed",
+  "suggestions": [],
+  "datasets": [
+    {"id": "ds_311", "rows": 1240, "columns": 5,
+     "partial_preview": true, "exportable": true,
+     "captured_at": "2026-08-15T16:48:00-03:00"}
   ]
 }
 ```
 
-`captura` es un rango porque el turno se reanudo. Con una sola captura, ambos extremos
+`capture` es un rango porque el turno se reanudo. Con una sola captura, ambos extremos
 coinciden. Los importes viajan como decimal exacto en cadena, no como numero JSON: un
 numero JSON se interpreta como coma flotante y perderia la garantia de la seccion 2.
+
+Dos campos distintos, dos idiomas distintos:
+
+```
+DataRequest.universe   -> lenguaje interno   -> authorized | complete
+scope.universe          -> lenguaje humano    -> "todos los clientes dentro de tu
+                                                   alcance autorizado"
+```
+
+`DataRequest.universe` (seccion 3) es el enum cerrado que usa Operaciones
+internamente para decidir si un calculo necesita cruzar la restriccion de filas del
+usuario. `scope.universe`, en cambio, es la descripcion del alcance efectivo que lee
+quien recibe la respuesta, y admite texto libre -- `08_parte_sintesis.md` lo ejemplifica
+tambien como `"region Centro (tu alcance actual)"` bajo contexto restringido. En esta
+traza las operaciones `comparar` y `explicar_variacion` trabajan sobre universo
+autorizado (`10_parte_operaciones.md` seccion 4), y `scope.universe` lo declara en
+lenguaje humano en vez de repetir el literal interno.
 
 ---
 
 ## 10. Canal de eventos
 
 ```
-event: operacion_completada
-data: {"turno_id":"t_58","objetivo_id":"obj_1","intento_id":"att_2",
-       "paso":"paso_2","estado":"completado"}
+event: operation_completed
+data: {"turn_id":"t_58","objective_id":"obj_1","attempt_id":"att_2",
+       "step":"step_2","state":"completed"}
 ```
 
 | Regla | Consecuencia |
 |---|---|
 | Los eventos son **estados del dominio** | Un evento que no corresponde a un estado es telemetria disfrazada |
-| Llevan `turno_id`, `objetivo_id`, `intento_id` | Un evento de intento superado se descarta como su resultado |
+| Llevan `turn_id`, `objective_id`, `attempt_id` | Un evento de intento superado se descarta como su resultado |
 | **No transportan datos de negocio** | El canal no es una segunda superficie de salida y no requiere revalidar contexto |
 | **Observa, no gobierna** | Cortar el canal no cancela el analisis |
 
-Eventos: `turno_iniciado`, `plan_validado`, `operacion_iniciada`,
-`operacion_completada`, `replanificando`, `sintetizando`, `completado`, `interrumpido`,
-`rechazado`.
+Eventos: `turn_started`, `plan_validated`, `operation_started`,
+`operation_completed`, `replanning`, `synthesizing`, `completed`, `interrupted`,
+`rejected`.
 
 El evento final transporta el mismo `Answer` que devuelve el endpoint sincrono. **SSE es
 un modo de entrega, no un segundo contrato.**

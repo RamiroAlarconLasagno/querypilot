@@ -102,16 +102,39 @@ debe tocar `executor/`**.
 
 ## 7. Convenciones de codigo
 
+> **Regla de idioma.** Todo identificador, contrato, estructura o valor **interpretado
+> por software** va en **ingles**: codigo, campos de modelos Pydantic, claves de
+> YAML/JSON, enums, estados, objetivos, operaciones, metricas, dimensiones, API HTTP,
+> SSE y tests (nombres de funcion, variables, fixtures y datos canonicos incluidos). El
+> **espanol** queda reservado para lo que lee una persona: comentarios, docstrings,
+> documentacion, descripciones, mensajes al usuario, y los sinonimos o expresiones en
+> lenguaje natural que el sistema debe reconocer como entrada.
+>
+> Ejemplo: `metric: net_revenue` con `description: "Facturacion neta"` y
+> `synonyms: ["facturacion", "ventas netas"]` — nunca `metrica: facturacion_neta`.
+>
+> Se corrige asi la version anterior de esta regla ("valores del dominio en espanol"),
+> que entraba en conflicto con `14_contratos_formato.md`, donde los modelos ya usaban
+> nombres de campo en ingles. Decision tomada al inicio del proyecto, sin API publicada
+> que mantener compatible: se aplica desde ahora, sin capa de compatibilidad.
+
 | Ambito | Convencion |
 |---|---|
-| Identificadores de programa | **Ingles** |
-| Valores del dominio | **Espanol**, sin acentos ni `n` con virgulilla |
+| Identificadores de programa (variables, clases, funciones, modulos) | **Ingles** |
+| Campos de modelos Pydantic | **Ingles** |
+| Claves de artefactos YAML/JSON interpretados por el programa | **Ingles** |
+| Identificadores canonicos: metricas, dimensiones, objetivos, operaciones, estados | **Ingles** |
+| Enumeraciones (enums) | **Ingles** |
+| Fixtures y datos canonicos de los tests | **Ingles** |
 | Docstrings y comentarios | **Espanol** |
+| Documentacion | **Espanol** |
+| Descripciones legibles y mensajes al usuario | **Espanol** |
+| Sinonimos y expresiones en lenguaje natural que el sistema debe reconocer | **Espanol** |
 | Primera linea de cada archivo | Comentario con su ruta relativa |
 | Importes y magnitudes derivadas | `Decimal` de punta a punta. **Nunca coma flotante** |
 | Rechazos | Valores de retorno con causa y accion, **no excepciones** |
 | Excepciones | Solo para fallas operativas |
-| `turno_id`, `objetivo_id`, `intento_id` | **Obligatorios**, sin valor por defecto |
+| `turn_id`, `objective_id`, `attempt_id` | **Obligatorios**, sin valor por defecto |
 
 Un `float` que se cuela es silencioso hasta que rompe la prueba de propiedades, y ahi el
 diagnostico apunta al lugar equivocado.
