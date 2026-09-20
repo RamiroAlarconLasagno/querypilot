@@ -69,24 +69,24 @@ silencioso, del peor tipo.
 ```
 ds_301
   capa obtenida:
-    metricas:      facturacion_neta
-    dimensiones:   cliente
-    periodo:       2026-06-01 .. 2026-07-31
-    granularidad:  mes
-    filtros:       (ninguno)
-    universo:      todos los clientes con actividad en el rango
-    columnas:      cliente, facturacion junio, facturacion julio
+    metrics:       net_revenue
+    dimensions:    customer
+    period:        2026-06-01 .. 2026-07-31
+    granularity:   mes
+    filters:       (ninguno)
+    universe:      todos los clientes con actividad en el rango
+    columns:       customer, net_revenue_june, net_revenue_july
 
   capa derivada:
-    columnas:      variacion absoluta, contribucion, contribucion acumulada
-    calculo:       descomponer_variacion sobre la capa obtenida
+    columns:       variacion absoluta, contribucion, contribucion acumulada
+    calculation:   decompose_variance sobre la capa obtenida
 
-  contexto:            ctx_884
-  version semantica:   sem_v7
-  captura:             2026-08-15 14:32
-  filas:               1.240
-  plan de origen:      plan_57
-  vigencia:            hasta 15:32 (periodo abierto: julio en curso al momento del analisis)
+  context_id:          ctx_884
+  semantic_version:    sem_v7
+  captured_at:         2026-08-15 14:32
+  row_count:           1.240
+  plan_id:             plan_57
+  valid_until:         hasta 15:32 (periodo abierto: julio en curso al momento del analisis)
 ```
 
 El descriptor usa **el mismo vocabulario que la peticion de datos**. Esa coincidencia

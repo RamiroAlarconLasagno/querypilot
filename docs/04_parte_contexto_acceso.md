@@ -57,7 +57,7 @@ Usuario
 | **Limites propios** | Maximo de filas exportables, y otros topes por rol |
 
 El alcance de datos se expresa **en vocabulario canonico del dominio**, no en columnas
-fisicas: `vendedor = u_ana`, no `ventas.id_vendedor = 47`. Eso lo hace incorporable a
+fisicas: `salesperson = u_ana`, no `ventas.id_vendedor = 47`. Eso lo hace incorporable a
 una peticion de datos sin que esta parte conozca el esquema.
 
 ### Roles del MVP
@@ -93,28 +93,28 @@ en una consola de administracion.
 
 ```
 ctx_884
-  usuario:              u_juan
-  rol:                  gerente comercial
-  conexion:             conn_distrib
-  alcance de datos:     sin restriccion
-  conceptos ocultos:    costo_unitario, costo_total, margen
-  operaciones:          catalogo base completo
-  exportacion:          permitida
-  emitido:              2026-08-15 14:31
+  user:            u_juan
+  role:            gerente comercial
+  connection:      conn_distrib
+  data_scope:      sin restriccion
+  hidden_concepts: unit_cost, total_cost, margin
+  operations:      catalogo base completo
+  export:          permitida
+  issued_at:       2026-08-15 14:31
 ```
 
 ### Ejemplo 2 — Contexto restringido
 
 ```
 ctx_912
-  usuario:              u_ana
-  rol:                  usuario restringido
-  conexion:             conn_distrib
-  alcance de datos:     vendedor = u_ana
-  conceptos ocultos:    costo_unitario, margen
-  operaciones:          catalogo base menos calcular_participacion, comparar_contra_pares
-  exportacion:          permitida hasta 5.000 filas
-  emitido:              2026-08-15 09:12
+  user:            u_ana
+  role:            usuario restringido
+  connection:      conn_distrib
+  data_scope:      salesperson = u_ana
+  hidden_concepts: unit_cost, margin
+  operations:      catalogo base menos calculate_share, compare_against_peers
+  export:          permitida hasta 5.000 filas
+  issued_at:       2026-08-15 09:12
 ```
 
 ### Ejemplo 3 — Verificacion de vigencia
@@ -135,7 +135,7 @@ Salida:   no vigente
 
 ### 4.1 La dimension no se oculta por restriccion de filas
 
-Tener acceso a un solo vendedor **no convierte la dimension `vendedor` en informacion
+Tener acceso a un solo vendedor **no convierte la dimension `salesperson` en informacion
 sensible**. Ana puede agrupar por vendedor; simplemente obtendra un solo grupo.
 
 Lo que debe impedirse son las **operaciones que necesitan el universo no autorizado**
@@ -247,7 +247,7 @@ flowchart TB
 | Filtrado | Un concepto oculto no aparece en el catalogo entregado al modelo |
 | Rechazo | Una propuesta sobre concepto oculto se rechaza sin nombrarlo |
 | Restriccion | La peticion construida bajo contexto restringido lleva la restriccion de filas |
-| Universo | `calcular_participacion` se rechaza bajo contexto restringido |
+| Universo | `calculate_share` se rechaza bajo contexto restringido |
 | Dimension | Una dimension con restriccion de filas **sigue disponible** para agrupar |
 | Alcance | El resultado bajo contexto restringido declara su alcance |
 | Congelamiento | Un cambio de permisos a mitad de turno no altera el turno en curso |

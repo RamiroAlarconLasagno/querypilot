@@ -72,7 +72,7 @@ REST/JSON es el **contrato canonico**. SSE entrega progreso mediante estados del
 > **El canal de eventos observa la ejecucion; no es dueno de ella.** Cortar el SSE no
 > cancela el analisis; el estado se consulta por HTTP.
 
-Los eventos llevan `turno_id`, `objetivo_id` e `intento_id`, y **no transportan datos de
+Los eventos llevan `turn_id`, `objective_id` e `attempt_id`, y **no transportan datos de
 negocio**: el canal no es una segunda superficie de salida y no requiere revalidar
 contexto. El evento final entrega el mismo objeto que el endpoint sincrono.
 
@@ -145,9 +145,11 @@ flowchart TB
 
 ## 5. Estructura de carpetas
 
-Nomenclatura: **ingles** donde el identificador nombra una construccion del programa;
-**espanol** donde nombra un concepto del negocio del cliente. Una metrica se declara
-`metric: "facturacion_neta"`, no `metrica: "net_revenue"`.
+Nomenclatura corregida segun `16_instrucciones_ia.md` seccion 7: **ingles** para todo
+identificador interpretado por software, incluidos metricas, dimensiones, objetivos y
+operaciones. Una metrica se declara `metric: "net_revenue"`, no `metrica:
+"facturacion_neta"`. El espanol queda para lo que lee una persona: descripciones,
+sinonimos, mensajes.
 
 ```
 querypilot/

@@ -99,42 +99,42 @@ de cerrar el resto.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> recibida
-    recibida --> interpretando
-    interpretando --> espera_aclaracion
-    espera_aclaracion --> interpretando
-    interpretando --> planificada
-    planificada --> ejecutando
-    ejecutando --> espera_aclaracion
-    espera_aclaracion --> ejecutando
-    ejecutando --> replanificando
-    replanificando --> ejecutando
-    ejecutando --> sintetizando
-    sintetizando --> respondida
-    interpretando --> rechazada
-    planificada --> rechazada
-    ejecutando --> rechazada
-    interpretando --> interrumpida
-    ejecutando --> interrumpida
-    interrumpida --> recuperable
-    recuperable --> ejecutando
-    recuperable --> fallida
-    espera_aclaracion --> fallida
-    respondida --> [*]
-    rechazada --> [*]
-    fallida --> [*]
+    [*] --> received
+    received --> interpreting
+    interpreting --> awaiting_clarification
+    awaiting_clarification --> interpreting
+    interpreting --> planned
+    planned --> executing
+    executing --> awaiting_clarification
+    awaiting_clarification --> executing
+    executing --> replanning
+    replanning --> executing
+    executing --> synthesizing
+    synthesizing --> answered
+    interpreting --> rejected
+    planned --> rejected
+    executing --> rejected
+    interpreting --> interrupted
+    executing --> interrupted
+    interrupted --> recoverable
+    recoverable --> executing
+    recoverable --> failed
+    awaiting_clarification --> failed
+    answered --> [*]
+    rejected --> [*]
+    failed --> [*]
 ```
 
-Dos familias, y la distincion es para la observabilidad: `respondida`, `rechazada` y
-`espera_aclaracion` son **resultados normales del dominio** —una tasa alta de rechazos
-senala catalogo insuficiente, no errores—; `interrumpida`, `recuperable` y `fallida` son
-situaciones operativas.
+Dos familias, y la distincion es para la observabilidad: `answered`, `rejected` y
+`awaiting_clarification` son **resultados normales del dominio** —una tasa alta de
+rechazos senala catalogo insuficiente, no errores—; `interrupted`, `recoverable` y
+`failed` son situaciones operativas.
 
 ### Estados de un paso del plan
 
-`pendiente` · `omitido` · `iniciado` · `completado` · `rechazado` · `no_ejecutado`
+`pending` · `skipped` · `started` · `completed` · `rejected` · `not_executed`
 
-`iniciado` existe porque hay registro previo y no posterior: distingue "no se ejecuto" de
+`started` existe porque hay registro previo y no posterior: distingue "no se ejecuto" de
 "se ejecuto y no sabemos el resultado".
 
 ---
@@ -264,10 +264,10 @@ flowchart TB
     C --> D
     B -->|no| D[El sistema analiza]
     D --> E{Resultado}
-    E -->|respondida| F[Lee conclusion, evidencia y alcance]
+    E -->|answered| F[Lee conclusion, evidencia y alcance]
     E -->|insuficiente| G[Lee hasta donde se pudo llegar]
-    E -->|rechazada| H[Lee causa y accion sugerida]
-    E -->|interrumpida| I[Reanuda o rehace]
+    E -->|rejected| H[Lee causa y accion sugerida]
+    E -->|interrupted| I[Reanuda o rehace]
     F --> J{¿Continua?}
     J -->|pregunta de seguimiento| A
     J -->|acepta una sugerencia| A
@@ -368,7 +368,7 @@ en la seccion 6 y en los contratos de cada parte.
 | **Coherencia de captura en calculos derivados** | Hechos correctos sobre estados distintos producen respuestas incoherentes | Re-ejecutar por coherencia resulta prohibitivo |
 | Una conversacion ejecuta un turno por vez | El uso natural es secuencial dentro de una conversacion | Los usuarios necesitan analisis en paralelo sobre el mismo hilo |
 | Plan durable con estado por paso; registro antes y despues | La reanudacion debe evitar repetir operaciones | La persistencia domina la latencia |
-| Ventana de recuperable derivada de la vigencia de los conjuntos | Reanudar sin conjuntos vivos no es mas barato que rehacer | La reanudacion tardia resulta valiosa igual |
+| Ventana de `recoverable` derivada de la vigencia de los conjuntos | Reanudar sin conjuntos vivos no es mas barato que rehacer | La reanudacion tardia resulta valiosa igual |
 | Maximo dos rondas y una replanificacion por objetivo | Dos rondas cubren las preguntas reales | Mas del 20 % termina con insuficiencia |
 | Presupuesto global de turno | Los limites por objetivo no acotan el turno completo | El presupuesto corta turnos legitimos con frecuencia |
 | Interpretacion y Sintesis separadas y sin comunicacion | Ambos usos del modelo tienen riesgos distintos | Un caso legitimo requiere que Sintesis conozca la intencion cruda |
@@ -395,7 +395,7 @@ julio contra junio y decime que clientes explican la caida."*
 |---|---|---|
 | 1-3 | Frontera, Contexto, Sesion | Autentica; emite contexto congelado; abre turno y persiste la pregunta |
 | 4 | Ejecutor | Solicita catalogos semantico y de operaciones, **filtrados por contexto** |
-| 5 | Interpretacion | Objetivo `explicar_variacion`; premisa declarada; plan de dos pasos, el segundo condicionado |
+| 5 | Interpretacion | Objetivo `explain_variance`; premisa declarada; plan de dos pasos, el segundo condicionado |
 | 6 | Ejecutor | Validacion estatica: el paso 1 declara publicar la variacion; la condicion es satisfacible |
 | 7 | Ejecutor + autoridades | Ocho validaciones en orden. Conteo previo: 84.320 filas, resultado de 2 |
 | 8 | Operaciones, Acceso a datos | Junio 4.812.400; julio 4.176.900; variacion -13,2 % |
@@ -416,37 +416,37 @@ obtencion**.
 
 | # | Que ocurre |
 |---|---|
-| 1 | Registro previo del paso 2 ya existia: queda en `iniciado`, sin registro posterior |
+| 1 | Registro previo del paso 2 ya existia: queda en `started`, sin registro posterior |
 | 2 | El Ejecutor clasifica: **interrupcion**, no rechazo |
-| 3 | Sesion persiste causa, momento y ventana. Turno a `interrumpida` y luego `recuperable` |
+| 3 | Sesion persiste causa, momento y ventana. Turno a `interrupted` y luego `recoverable` |
 | 4 | La respuesta minima ya estaba construida sobre los hechos disponibles |
 | 5 | **No se invoca Sintesis**: no hubo evaluacion de suficiencia |
-| 6 | El estado analitico **no se actualiza**: el turno no fue `respondida` |
+| 6 | El estado analitico **no se actualiza**: el turno no fue `answered` |
 | 7 | La Frontera entrega salida de tipo interrumpido, con lo establecido etiquetado como parcial |
 
 Invariantes verificados: 1, 6, 7, 10.
 
-**Hallazgo principal:** el estado `iniciado` obliga a decidir si re-ejecutar. Como todas
+**Hallazgo principal:** el estado `started` obliga a decidir si re-ejecutar. Como todas
 las operaciones son lecturas, re-ejecutar es seguro: **el invariante de solo lectura es
-lo que hace barata la recuperacion**. Segundo hallazgo: la ventana de `recuperable` no
+lo que hace barata la recuperacion**. Segundo hallazgo: la ventana de `recoverable` no
 puede exceder la vigencia de los conjuntos del plan, o la reanudacion conserva la ilusion
 de continuidad sin su beneficio.
 
 ### 11.3 Recuperacion
 
 **Dentro de ventana.** Contexto vigente, version semantica sin cambios, conjuntos vivos.
-El Ejecutor localiza el punto de reanudacion, re-ejecuta el paso `iniciado`, completa el
+El Ejecutor localiza el punto de reanudacion, re-ejecuta el paso `started`, completa el
 objetivo y responde. Los hechos del paso 1 y del paso 2 tienen **momentos de captura
 distintos**: el alcance declara el rango, y ambos son evidencia original.
 
 **Imposible.** Tres causas —ventana vencida, contexto cambiado, version semantica
-cambiada— producen el mismo desenlace: el turno pasa a `fallida`, sus conjuntos quedan
+cambiada— producen el mismo desenlace: el turno pasa a `failed`, sus conjuntos quedan
 como evidencia historica y **no se re-filtran**, y se ofrece rehacer bajo condiciones
-actuales. La respuesta rehecha declara `origen: rehecho` con su causa, porque lo que
+actuales. La respuesta rehecha declara `origin: redone` con su causa, porque lo que
 cambio no fue el dato sino el observador.
 
 **Hallazgo principal:** en la reanudacion imposible conviven los hechos del turno fallido
-y los del nuevo. Sin `turno_id`, una afirmacion del nuevo podria citar evidencia del
+y los del nuevo. Sin `turn_id`, una afirmacion del nuevo podria citar evidencia del
 viejo —producida bajo otro contexto de acceso—: no es solo un error de trazabilidad, es
 una fuga de permisos.
 
@@ -515,7 +515,7 @@ Diez problemas encontrados, todos corregidos en los contratos.
 | P2 | La version semantica no se congelaba por turno | Se congela igual que el contexto |
 | P3 | Hechos de un mismo calculo podian venir de capturas distintas | Coherencia de captura obligatoria; prevalece sobre la reutilizacion |
 | P4 | Dos turnos simultaneos en una conversacion | Un turno activo por conversacion |
-| P5 | Resultados de un intento superado | `intento_id`; los tardios se descartan sin procesar |
+| P5 | Resultados de un intento superado | `attempt_id`; los tardios se descartan sin procesar |
 | P6 | Reanudacion concurrente del mismo turno | Una sola reanudacion en curso |
 | P7 | Peticiones duplicadas | Clave de idempotencia opcional |
 | P8 | No existia presupuesto de turno | Tiempo total y llamadas al modelo, por turno |

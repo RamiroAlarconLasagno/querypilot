@@ -55,9 +55,8 @@ por defecto y **desactivar lo que estorbe**, en vez de acumular una lista larga 
 | ruff para lint y formato | Reemplaza cuatro herramientas por una |
 | Configuracion en `pyproject.toml` | Un solo archivo de configuracion |
 | mypy en modo estricto | El proyecto es fuertemente tipado por diseno |
-| Docstrings y comentarios en espanol | Convencion del proyecto |
-| Identificadores de programa en ingles | Convencion del proyecto |
-| Valores del dominio en espanol | Pertenecen al negocio del cliente |
+| Docstrings, comentarios y documentacion en espanol | Convencion del proyecto |
+| Todo identificador interpretado por software en ingles | Ver `16_instrucciones_ia.md` seccion 7; corregido, ya no depende de si nombra un concepto del negocio |
 
 ---
 
@@ -155,9 +154,8 @@ cuando cambian prompts, modelo o artefacto semantico.
 
 | Ambito | Convencion |
 |---|---|
-| Identificadores de programa | Ingles |
-| Valores del dominio | Espanol, sin acentos ni `n` con virgulilla |
-| Documentacion y comentarios | Espanol |
+| Todo identificador interpretado por software (codigo, campos, YAML/JSON, enums, metricas, dimensiones, objetivos, operaciones, estados, API, tests) | Ingles -- ver `16_instrucciones_ia.md` seccion 7 |
+| Documentacion, comentarios, descripciones, mensajes, sinonimos en lenguaje natural | Espanol |
 | Importes y magnitudes derivadas | `Decimal` de punta a punta; redondeo solo de presentacion |
 | Rechazos | Valores de retorno, no excepciones |
 | Excepciones | Reservadas para fallas operativas |

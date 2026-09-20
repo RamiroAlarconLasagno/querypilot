@@ -75,7 +75,7 @@ campo obligatorio de la ficha.
 | Campo | Contenido |
 |---|---|
 | Objetivo | Uno del catalogo cerrado |
-| Continuidad | `nueva` o `continuacion`, con lo que hereda del estado analitico |
+| Continuidad | `new` o `continuation`, con lo que hereda del estado analitico |
 | Conceptos | Metricas y dimensiones canonicas, cada una con la expresion original que la origino |
 | Expresiones temporales | Sin resolver: "julio", "el ultimo trimestre" |
 | Filtros | Dimension canonica, operador y valores literales |
@@ -103,7 +103,7 @@ eleccion y para formular la aclaracion cuando haga falta.
 
 ### Continuidad explicita
 
-`continuacion` declara **que** hereda: periodo, filtros, metrica, dimension. Nunca se
+`continuation` declara **que** hereda: periodo, filtros, metrica, dimension. Nunca se
 hereda por omision. Un estado analitico que se arrastra en silencio produce respuestas
 correctas sobre el alcance equivocado, que es el error mas dificil de detectar para el
 usuario.
@@ -125,26 +125,26 @@ Ejemplo de la traza nominal — *"Compara la facturacion de julio contra junio y
 que clientes explican la caida"*:
 
 ```
-objetivo:      explicar_variacion
-continuidad:   nueva
-conceptos:     facturacion_neta  (de "facturacion")
-               cliente           (de "clientes")
-temporales:    "julio", "junio"
-premisas:      existe una caida entre ambos periodos
+objective:     explain_variance
+continuity:    new
+concepts:      net_revenue  (de "facturacion")
+               customer     (de "clientes")
+temporal:      "julio", "junio"
+premises:      existe una caida entre ambos periodos
 plan:
-  paso 1  comparar_periodos
-          metrica = facturacion_neta
-          periodo_actual = "julio"
-          periodo_comparacion = "junio"
-          condicion: (ninguna)
+  step 1  compare_periods
+          metric = net_revenue
+          current_period = "julio"
+          comparison_period = "junio"
+          condition: (ninguna)
 
-  paso 2  descomponer_variacion
-          metrica = facturacion_neta
-          periodo_actual = "julio"
-          periodo_comparacion = "junio"
-          dimension = cliente
-          condicion: hecho(variacion_relativa) < 0
-ambiguedades:  (ninguna)
+  step 2  decompose_variance
+          metric = net_revenue
+          current_period = "julio"
+          comparison_period = "junio"
+          dimension = customer
+          condition: fact(relative_variance) < 0
+ambiguities:   (ninguna)
 ```
 
 El paso 2 es condicional porque la premisa puede ser falsa. Si julio subio, el paso no
@@ -162,7 +162,7 @@ correctas a la pregunta equivocada. La regla que separa ambos casos:
 
 | Caso | Material | Comportamiento |
 |---|---|---|
-| "ventas", con `facturacion_neta` declarada como acepcion por defecto | No | Se resuelve y se declara en el alcance |
+| "ventas", con `net_revenue` declarada como acepcion por defecto | No | Se resuelve y se declara en el alcance |
 | "los mejores clientes", sin criterio declarado | Si | Aclaracion con opciones concretas |
 | "el ultimo trimestre" con calendario fiscal ambiguo | Si | La detecta Conocimiento, no Interpretacion |
 | "este mes" | No | Resuelve Conocimiento con la fecha de referencia |
@@ -184,10 +184,10 @@ que nunca ofrecen algo que el usuario no puede ver.
 Pregunta: *"Mostrame los mejores clientes de este trimestre."*
 
 ```
-objetivo:      rankear
-conceptos:     cliente
-temporales:    "este trimestre"
-ambiguedades:  criterio de "mejores"
+objective:     rank
+concepts:      customer
+temporal:      "este trimestre"
+ambiguities:   criterio de "mejores"
                opciones: facturacion neta, unidades vendidas, cantidad de operaciones
 plan:          (no se propone)
 ```
@@ -201,13 +201,13 @@ Estado analitico vigente: periodo julio-junio, dimension cliente, conjunto `ds_3
 Pregunta: *"Saca esos tres y compara de nuevo."*
 
 ```
-objetivo:            comparar
-continuidad:         continuacion (hereda metrica, ambos periodos y dimension)
-referencias:         "esos tres" = los tres contribuyentes principales del turno anterior,
+objective:           compare
+continuity:          continuation (hereda metrica, ambos periodos y dimension)
+references:          "esos tres" = los tres contribuyentes principales del turno anterior,
                      identificados nominalmente
-filtros:             cliente distinto de [los tres identificados]
+filters:             cliente distinto de [los tres identificados]
 plan:
-  paso 1  comparar_periodos con el filtro aplicado
+  step 1  compare_periods con el filtro aplicado
 ```
 
 Los tres clientes se nombran explicitamente en la propuesta. Si el referente no fuera
@@ -218,11 +218,11 @@ localizable, corresponde aclaracion, no suposicion.
 Pregunta: *"¿Nos conviene abrir una sucursal en Cordoba?"*
 
 ```
-objetivo:        (ninguno aplicable)
-fuera_de_alcance: la pregunta requiere proyeccion y criterio de negocio, no analisis
-                  de datos existentes
-alternativas:     facturacion por region, evolucion mensual de la region Centro,
-                  ranking de clientes por region
+objective:      (ninguno aplicable)
+out_of_scope:   la pregunta requiere proyeccion y criterio de negocio, no analisis
+                de datos existentes
+alternatives:   facturacion por region, evolucion mensual de la region Centro,
+                ranking de clientes por region
 ```
 
 Declarar el limite y ofrecer lo adyacente es una salida legitima y frecuente. No es un
@@ -247,15 +247,15 @@ al usuario a separarlas.
 Pregunta: *"Compara julio contra junio y decime tambien el ranking anual."*
 
 ```
-turno:
-  objetivo_1: comparar
-    plan: comparar_periodos(facturacion_neta, "julio", "junio")
-    continuidad: nueva
+turn:
+  objective_1: compare
+    plan: compare_periods(net_revenue, "julio", "junio")
+    continuity: new
 
-  objetivo_2: rankear
-    plan: rankear(facturacion_neta, cliente, "ano actual", n = 10)
-    continuidad: nueva
-    dependencia: (ninguna)
+  objective_2: rank
+    plan: rank(net_revenue, customer, "ano actual", n = 10)
+    continuity: new
+    dependency: (ninguna)
 ```
 
 ### Reglas
@@ -278,8 +278,8 @@ Pregunta: *"Compara julio contra junio y para esos mismos clientes dame el ranki
 anual."*
 
 ```
-  objetivo_2: rankear
-    dependencia: filtro cliente proveniente de los elementos del objetivo_1
+  objective_2: rank
+    dependency: filtro cliente proveniente de los elementos del objective_1
 ```
 
 Una dependencia declarada obliga a ordenar los objetivos y hace que el segundo no
@@ -299,7 +299,7 @@ insuficiencia, catalogos.
 | Proponer operaciones adicionales del catalogo | Proponer una tercera ronda |
 | Declarar que no hay via para satisfacer el criterio | Reinterpretar la pregunta original |
 
-Si el objetivo estaba mal elegido, el camino valido es `espera_aclaracion`, no
+Si el objetivo estaba mal elegido, el camino valido es `awaiting_clarification`, no
 replanificar hacia otra cosa. Reinterpretar en la segunda ronda equivale a responder
 una pregunta distinta de la que el usuario hizo.
 
@@ -336,7 +336,7 @@ misma insuficiencia.
 
 El ultimo caso merece nota: los **valores** de filtro son datos, no esquema.
 Interpretacion no puede validarlos contra ningun catalogo, y su inexistencia solo se
-descubre al consultar. La causa `valor_de_filtro_inexistente` deriva en aclaracion con
+descubre al consultar. La causa `nonexistent_filter_value` deriva en aclaracion con
 los valores reales disponibles, no en un resultado vacio presentado como respuesta.
 
 ---
@@ -354,7 +354,7 @@ Con un doble del modelo que devuelve propuestas fijas:
 | Una propuesta con objetivo fuera de catalogo se rechaza |
 | Una propuesta con concepto fuera del catalogo filtrado se rechaza |
 | Una condicion sobre un hecho no publicado se rechaza en validacion estatica |
-| Una `continuacion` declara explicitamente que hereda |
+| Una `continuation` declara explicitamente que hereda |
 | Una ambiguedad material no viene acompanada de plan |
 | La replanificacion que cambia el objetivo se rechaza |
 
@@ -363,16 +363,16 @@ Con un doble del modelo que devuelve propuestas fijas:
 Cada caso declara pregunta e interpretacion esperada:
 
 ```
-Pregunta:
+question:
   "¿Quienes fueron nuestros mejores clientes este trimestre?"
 
-Interpretacion esperada:
-  objetivo:     rankear
-  metrica:      facturacion_neta        (con acepcion por defecto declarada)
-  dimension:    cliente
-  temporal:     "este trimestre"
-  orden:        descendente
-  limite:       10
+expected:
+  objective:  rank
+  metric:     net_revenue             (con acepcion por defecto declarada)
+  dimension:  customer
+  temporal:   "este trimestre"
+  order:      descending
+  limit:      10
 ```
 
 Metricas del banco:

@@ -99,8 +99,8 @@ subir el limite ni pasar a conteos aproximados.
 
 | Limite | Al excederse |
 |---|---|
-| Tiempo de consulta | Rechazo con causa `limite_tiempo_excedido`, accion: acotar el periodo |
-| Filas del resultado | Rechazo con causa `limite_filas_excedido`, accion: agregar o filtrar |
+| Tiempo de consulta | Rechazo con causa `time_limit_exceeded`, accion: acotar el periodo |
+| Filas del resultado | Rechazo con causa `row_limit_exceeded`, accion: agregar o filtrar |
 | Filas examinadas | No rechaza: dispara aviso o pedido de confirmacion |
 
 > **Ningun resultado se trunca en silencio.** Si excede, se rechaza y se explica.
@@ -158,12 +158,12 @@ generada bajo contexto restringido contiene la restriccion.
 
 | Causa | Cuando | Accion sugerida |
 |---|---|---|
-| `fuente_no_disponible` | La conexion falla | Interrupcion recuperable |
-| `limite_tiempo_excedido` | La consulta supera su tope | Acotar el periodo |
-| `limite_filas_excedido` | El resultado supera el maximo | Agregar o filtrar |
-| `periodo_sin_datos` | El rango no contiene registros | Ofrecer periodos cercanos con datos |
-| `valor_de_filtro_inexistente` | El valor literal no existe en la dimension | Ofrecer los valores reales disponibles |
-| `permiso_insuficiente_en_la_fuente` | La credencial no alcanza para leer algo declarado | Revisar el aprovisionamiento |
+| `source_not_available` | La conexion falla | Interrupcion recuperable |
+| `time_limit_exceeded` | La consulta supera su tope | Acotar el periodo |
+| `row_limit_exceeded` | El resultado supera el maximo | Agregar o filtrar |
+| `period_without_data` | El rango no contiene registros | Ofrecer periodos cercanos con datos |
+| `nonexistent_filter_value` | El valor literal no existe en la dimension | Ofrecer los valores reales disponibles |
+| `insufficient_source_permission` | La credencial no alcanza para leer algo declarado | Revisar el aprovisionamiento |
 
 La quinta merece nota: **los valores de filtro son datos, no esquema**. "Region Centro"
 no se puede validar contra ningun catalogo — si esa region no existe, solo se descubre

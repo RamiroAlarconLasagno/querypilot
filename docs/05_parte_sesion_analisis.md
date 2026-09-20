@@ -52,8 +52,8 @@ adversarial de quien es dueno del estado cuando dos partes quieren cambiarlo.
 | **Estado analitico** | Periodo, filtros, metrica, dimension, definiciones vigentes y ultima referencia |
 | **Plan de analisis** | Objetivos, pasos, condiciones, criterio de suficiencia y estado por paso |
 | **Invocacion** | Operacion, parametros, momento de inicio y de fin, duracion, resultado |
-| **Hechos** | Con su `objetivo_id` y su referencia a la invocacion que los produjo |
-| **Respuesta** | Afirmaciones, alcance, origen de la redaccion, sugerencias |
+| **Hechos** | Con su `objective_id` y su referencia a la invocacion que los produjo |
+| **Respuesta** | Afirmaciones, alcance, drafting_origin, sugerencias |
 | **Analisis guardado** | Un turno marcado para conservarse mas alla de la conversacion |
 | **Referencias a conjuntos** | Identificadores, no las filas |
 
@@ -71,8 +71,8 @@ mensajes: es un objeto estructurado.
 |---|---|
 | Periodo | junio y julio de 2026 |
 | Filtros | ninguno |
-| Metrica | facturacion_neta |
-| Dimension | cliente |
+| Metrica | net_revenue |
+| Dimension | customer |
 | Definiciones aplicadas | facturacion = ventas menos notas de credito |
 | Ultima referencia | ds_301, con sus tres contribuyentes principales |
 | Version semantica | sem_v7 |
@@ -81,12 +81,12 @@ mensajes: es un objeto estructurado.
 
 | Situacion | Efecto sobre el estado analitico |
 |---|---|
-| Turno `respondida` | Se actualiza con el alcance efectivamente usado |
-| Turno `rechazada` | **No se actualiza.** Un rechazo no cambia el contexto de trabajo |
-| `espera_aclaracion` | No se actualiza hasta que el turno se complete |
+| Turno `answered` | Se actualiza con el alcance efectivamente usado |
+| Turno `rejected` | **No se actualiza.** Un rechazo no cambia el contexto de trabajo |
+| `awaiting_clarification` | No se actualiza hasta que el turno se complete |
 | Turno con multiples objetivos | Se actualiza con el ultimo objetivo satisfecho, o queda sin cambio si ninguno lo fue |
-| Turno declarado `nueva` por Interpretacion | Se reemplaza, no se combina |
-| Turno `continuacion` | Se actualiza solo en lo que la continuacion declaro heredar y modificar |
+| Turno declarado `new` por Interpretacion | Se reemplaza, no se combina |
+| Turno `continuation` | Se actualiza solo en lo que la continuacion declaro heredar y modificar |
 
 **El estado analitico vigente siempre es visible para el usuario.** Es un invariante
 del sistema, no una caracteristica de interfaz: el usuario debe poder ver sobre que
@@ -108,25 +108,25 @@ persistido con **estado por paso**.
 
 | Estado de paso | Significado |
 |---|---|
-| `pendiente` | Declarado, no iniciado |
-| `omitido` | Su condicion no se cumplio |
-| `iniciado` | Hay registro previo, no hay registro posterior |
-| `completado` | Con hechos y resultado registrados |
-| `rechazado` | Con causa |
-| `no_ejecutado` | Dependia de un objetivo que fallo o fue rechazado |
+| `pending` | Declarado, no iniciado |
+| `skipped` | Su condicion no se cumplio |
+| `started` | Hay registro previo, no hay registro posterior |
+| `completed` | Con hechos y resultado registrados |
+| `rejected` | Con causa |
+| `not_executed` | Dependia de un objetivo que fallo o fue rechazado |
 
 ### Registro antes y despues
 
 > Registrar **antes** de invocar es lo que distingue "no se ejecuto" de "se ejecuto y
 > no sabemos el resultado".
 
-Un paso en estado `iniciado` tras un reinicio es exactamente el caso que un registro
+Un paso en estado `started` tras un reinicio es exactamente el caso que un registro
 solo-de-resultados no puede detectar, y el que produce operaciones repetidas.
 
 ### Concurrencia
 
 > **Una conversacion ejecuta un turno por vez.** Un segundo turno sobre la misma
-> conversacion se rechaza con causa `turno_en_curso`, informando cual esta en ejecucion.
+> conversacion se rechaza con causa `turn_in_progress`, informando cual esta en ejecucion.
 > Conversaciones distintas del mismo usuario si son concurrentes.
 
 Sin esta regla, dos turnos simultaneos —un usuario con dos pestanas— leerian el mismo
@@ -134,8 +134,8 @@ estado analitico y ambos propondrian actualizarlo al terminar: el resultado depe
 del orden de escritura, y una continuacion podria heredar de un turno que todavia no
 termino.
 
-> **Un turno en `recuperable` admite una sola reanudacion en curso.** La primera la
-> toma; una segunda recibe rechazo con causa `reanudacion_en_curso`.
+> **Un turno en `recoverable` admite una sola reanudacion en curso.** La primera la
+> toma; una segunda recibe rechazo con causa `resumption_in_progress`.
 
 Dos reanudaciones simultaneas no corrompen datos —toda operacion es lectura— pero
 duplican coste y pueden producir dos conjuntos con capturas distintas para el mismo
@@ -145,15 +145,15 @@ paso, que es justo lo que la coherencia de captura viene a evitar.
 
 | Estado | Ventana | Al vencer |
 |---|---|---|
-| `recuperable` | Derivada (ver abajo) | Pasa a `fallida`; solo puede rehacerse |
-| `espera_aclaracion` | Mas larga, configurable | Pasa a `fallida` |
+| `recoverable` | Derivada (ver abajo) | Pasa a `failed`; solo puede rehacerse |
+| `awaiting_clarification` | Mas larga, configurable | Pasa a `failed` |
 
 La asimetria es deliberada: una aclaracion espera a una persona, que puede tardar; una
 interrupcion tecnica espera a que los conjuntos sigan vivos, y esos vencen antes.
 
-### La ventana de `recuperable` se deriva, no se inventa
+### La ventana de `recoverable` se deriva, no se inventa
 
-> La ventana de `recuperable` de un turno **no excede la vigencia mas corta entre los
+> La ventana de `recoverable` de un turno **no excede la vigencia mas corta entre los
 > conjuntos referenciados por su plan**. Si el plan no referencia ningun conjunto que
 > aporte esa cota, se aplica un maximo operativo configurable.
 
@@ -164,7 +164,7 @@ cambio la ilusion de continuidad.
 
 ### El turno como frontera de consistencia
 
-> **Un turno es una frontera de consistencia.** Reanudar conserva el mismo `turno_id`;
+> **Un turno es una frontera de consistencia.** Reanudar conserva el mismo `turn_id`;
 > rehacer crea uno nuevo. Dentro de un turno se mantienen constantes **el contexto de
 > acceso, la version semantica y el espacio de evidencia**.
 
@@ -289,12 +289,12 @@ flowchart TB
 | Nivel | Que verifica |
 |---|---|
 | Durabilidad | Cortando el proceso en cada punto, el plan se recupera completo |
-| Estados de paso | Un paso `iniciado` se distingue de uno `pendiente` |
+| Estados de paso | Un paso `started` se distingue de uno `pending` |
 | Reanudacion | No se repiten pasos ya completados |
 | Estado analitico | Un turno rechazado no lo modifica |
-| Estado analitico | Una `continuacion` actualiza solo lo declarado |
+| Estado analitico | Una `continuation` actualiza solo lo declarado |
 | Estado analitico | Es siempre consultable por el usuario |
-| Ventanas | `recuperable` y `espera_aclaracion` vencen de forma independiente |
+| Ventanas | `recoverable` y `awaiting_clarification` vencen de forma independiente |
 | Auditoria | Un analisis de hace meses se reconstruye con su version semantica |
 | Evidencia | La reconstruida se identifica como tal, nunca como original |
 | Compartido | Abrirlo con otro contexto produce re-ejecucion, no filtrado |
@@ -319,7 +319,7 @@ dijo.
 | Compartir comparte la definicion reproducible, no las filas | Re-ejecutar bajo el contexto del lector es viable | Re-ejecutar resulta prohibitivamente caro | Sistema |
 | Un turno rechazado no altera el estado analitico | El rechazo no representa un avance del trabajo | Los usuarios esperan que un rechazo cambie el alcance | Implementacion |
 | El turno es frontera de consistencia | Un turno es corto y coherente; reanudar lo conserva, rehacer lo reemplaza | Aparece un caso legitimo que necesita evidencia de dos turnos | Sistema |
-| Ventana de `recuperable` derivada de la vigencia de los conjuntos | Reanudar sin conjuntos vivos no es mas barato que rehacer | La reanudacion tardia resulta valiosa igual | Sistema |
+| Ventana de `recoverable` derivada de la vigencia de los conjuntos | Reanudar sin conjuntos vivos no es mas barato que rehacer | La reanudacion tardia resulta valiosa igual | Sistema |
 | Version semantica congelada por turno | Un turno es corto frente a la frecuencia de cambios semanticos | Los cambios semanticos son tan frecuentes que congelar produce respuestas obsoletas | Sistema |
 | Un turno activo por conversacion | El uso natural es secuencial dentro de una conversacion | Los usuarios necesitan lanzar analisis en paralelo sobre el mismo hilo | Sistema |
 | Una reanudacion en curso por turno | Reanudar dos veces solo duplica coste | — | Sistema |
@@ -334,9 +334,9 @@ dijo.
    guardado explicitamente.
 2bis. **Durabilidad de los conjuntos frente al reinicio del proceso**. La reanudacion
    tras reinicio solo se promete si los conjuntos sobreviven; de lo contrario la ventana
-   de `recuperable` colapsa a cero. Ver `10_parte_conjuntos_datos.md`.
-3. **Maximo operativo** de la ventana de `recuperable` cuando el plan no referencia
-   conjuntos que aporten cota, y duracion de `espera_aclaracion`.
+   de `recoverable` colapsa a cero. Ver `10_parte_conjuntos_datos.md`.
+3. **Maximo operativo** de la ventana de `recoverable` cuando el plan no referencia
+   conjuntos que aporten cota, y duracion de `awaiting_clarification`.
 4. **Modelo de compartido**: a usuarios concretos o por enlace, y comportamiento cuando
    el lector no tiene acceso a la conexion.
 5. **Conservacion explicita de evidencia** para analisis importantes. Fuera del MVP,
@@ -375,7 +375,7 @@ la implementacion: cualquier firma que lo respete es valida.
 2. Reglas de actualizacion del estado analitico.
 3. Plan durable con estado por paso; registro previo y posterior.
 4. Registro durable del analisis con version semantica y de prompt.
-5. Ventanas de validez y transiciones a `fallida`.
+5. Ventanas de validez y transiciones a `failed`.
 6. Guarda de concurrencia.
 7. Analisis guardados y compartidos.
 

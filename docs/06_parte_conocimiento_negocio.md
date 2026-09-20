@@ -79,7 +79,7 @@ sistema que dice una cosa y calcula otra.
 ### Acepcion por defecto
 
 Campo que convierte una ambiguedad en no material. Si `ventas` se declara como
-acepcion por defecto de `facturacion_neta`, Interpretacion resuelve sin preguntar y la
+acepcion por defecto de `net_revenue`, Interpretacion resuelve sin preguntar y la
 respuesta declara la definicion aplicada en su alcance. Sin acepcion declarada, la
 misma expresion produce una aclaracion.
 
@@ -105,16 +105,16 @@ defecto declarada es una pregunta que el usuario deja de recibir.
 Entrada:  "facturacion"
 
 Salida:
-  metrica canonica:        facturacion_neta
-  nombre de negocio:       Facturacion
-  definicion:              ventas menos notas de credito
-  sinonimos:               ventas, ingresos, facturado
-  acepcion por defecto de: ventas
-  unidad:                  ARS
-  dimensiones combinables: cliente, region, producto, vendedor, categoria
-  granularidad minima:     dia
-  agregaciones validas:    suma
-  version semantica:       sem_v7
+  id:                    net_revenue
+  business_name:         Facturacion
+  definition:            ventas menos notas de credito
+  synonyms:              ventas, ingresos, facturado
+  default_sense_of:      ventas
+  unit:                  ARS
+  combinable_dimensions: customer, region, product, salesperson, category
+  min_granularity:       day
+  aggregations:          sum
+  semantic_version:      sem_v7
 ```
 
 ### Ejemplo 2 — Resolucion temporal
@@ -123,30 +123,30 @@ Salida:
 Entrada:  "julio", fecha de referencia 2026-08-15
 
 Salida:
-  rango:                   2026-07-01 .. 2026-07-31
-  calendario:              civil
-  campo temporal aplicable: fecha de emision
-  interpretacion asumida:  ano en curso
-  alternativas descartadas: julio 2025
-  periodo cerrado:         si
+  range:                    2026-07-01 .. 2026-07-31
+  calendar:                 calendar
+  applicable_temporal_field: fecha de emision
+  assumed_interpretation:   ano en curso
+  discarded_alternatives:   julio 2025
+  closed_period:            si
 ```
 
-El campo `periodo cerrado` no es decorativo: determina la frescura exigida a un
+El campo `closed_period` no es decorativo: determina la frescura exigida a un
 conjunto que cubra ese rango.
 
 ### Ejemplo 3 — Especificacion semantico-fisica
 
 ```
-Entrada:  metrica facturacion_neta, dimension cliente
+Entrada:  metric net_revenue, dimension customer
 
 Salida:
-  fuente principal:        ventas
-  expresion de medida:     suma de importe neto
-  relacion:                ventas -> clientes, por identificador de cliente
-  campo temporal:          fecha de emision
-  atributo de dimension:   nombre de cliente
-  exclusion permanente:    comprobantes anulados
-  granularidad disponible: dia
+  main_source:             ventas
+  measure_expression:      suma de importe neto
+  relation:                ventas -> clientes, por identificador de cliente
+  temporal_field:          fecha de emision
+  dimension_attribute:     nombre de cliente
+  permanent_exclusion:     comprobantes anulados
+  available_granularity:   day
 ```
 
 Es una **receta estructurada**, no una consulta. No contiene sintaxis de ningun motor.
@@ -157,9 +157,9 @@ Es una **receta estructurada**, no una consulta. No contiene sintaxis de ningun 
 Entrada:  "margen", contexto ctx_884 (costo oculto)
 
 Salida:
-  rechazo
-  causa:        concepto_no_disponible_en_contexto
-  alternativas: facturacion neta, unidades vendidas
+  rejection
+  cause:         concept_not_available_in_context
+  alternatives:  facturacion neta, unidades vendidas
 ```
 
 Es la **segunda barrera**: el catalogo entregado a Interpretacion ya no contenia el
@@ -260,15 +260,15 @@ vocabulario cambia las interpretaciones esperadas. Su ejecucion la orquesta el e
 de prueba del integrador; su definicion pertenece aqui.
 
 ```
-Caso:
-  pregunta:      "¿Quienes fueron nuestros mejores clientes este trimestre?"
-  interpretacion esperada:
-    objetivo:    rankear
-    metrica:     facturacion_neta
-    dimension:   cliente
-    temporal:    "este trimestre"
-    orden:       descendente
-    limite:      10
+case:
+  question:  "¿Quienes fueron nuestros mejores clientes este trimestre?"
+  expected:
+    objective: rank
+    metric:    net_revenue
+    dimension: customer
+    temporal:  "este trimestre"
+    order:     descending
+    limit:     10
 ```
 
 Un caso no declara la respuesta esperada en cifras —eso depende de los datos— sino la

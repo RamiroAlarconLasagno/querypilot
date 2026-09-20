@@ -68,27 +68,27 @@ Una respuesta nunca contiene el conjunto completo. Contiene la conclusion, la
 evidencia resumida, el recuento y una **referencia** al conjunto.
 
 ```
-respuesta
-  turno:                t_57
-  estado:               respondida
-  secciones:            (una por objetivo, con afirmaciones tipificadas)
-  alcance:              periodo, definiciones, universo, momento de captura
-  origen de la redaccion: sintesis validada | respuesta minima
-  origen del analisis:  nuevo | reanudado | rehecho (con causa)
-  continuaciones sugeridas
-  conjuntos:
-    - identificador:    ds_301
-      filas totales:    1.240
-      columnas:         5
-      vista previa:     (hasta el umbral configurado)
-      exportable:       si
-      captura:          2026-08-15 14:32
+answer
+  turn:              t_57
+  state:             answered
+  sections:          (una por objetivo, con afirmaciones tipificadas)
+  scope:             periodo, definiciones, universo, momento de captura
+  drafting_origin:   validated_synthesis | minimal_response
+  analysis_origin:   new | resumed | redone (con causa)
+  suggestions
+  datasets:
+    - id:            ds_301
+      total_rows:    1.240
+      columns:       5
+      preview:       (hasta el umbral configurado)
+      exportable:    si
+      captured_at:   2026-08-15 14:32
 ```
 
-`origen de la redaccion` es visible para el cliente. Si la respuesta se degrado a la
+`drafting_origin` es visible para el cliente. Si la respuesta se degrado a la
 version minima, el consumidor tiene derecho a saberlo.
 
-`origen del analisis` distingue una respuesta nueva de una reanudada y, sobre todo, de
+`analysis_origin` distingue una respuesta nueva de una reanudada y, sobre todo, de
 una **rehecha**: cuando un analisis no pudo reanudarse y se rehizo bajo condiciones
 actuales, las cifras pueden diferir de las que el usuario vio antes. Sin esa senal, un
 cambio de alcance del observador parece un cambio en los datos.
@@ -124,8 +124,8 @@ correcta, y el contrato debe reflejarlo asi.
 
 | Regla | Comportamiento |
 |---|---|
-| Un turno activo por conversacion | Un segundo turno se rechaza con causa `turno_en_curso`, indicando cual esta en ejecucion |
-| Una reanudacion en curso por turno | Una segunda recibe `reanudacion_en_curso` |
+| Un turno activo por conversacion | Un segundo turno se rechaza con causa `turn_in_progress`, indicando cual esta en ejecucion |
+| Una reanudacion en curso por turno | Una segunda recibe `resumption_in_progress` |
 | Conversaciones distintas del mismo usuario | Concurrentes, sin restriccion |
 
 ### Clave de idempotencia
@@ -225,7 +225,7 @@ esta en la caja equivocada.
 | Rechazos | Un rechazo por permisos no nombra el concepto |
 | Compartido | Abrir un analisis ajeno re-ejecuta bajo el contexto del lector |
 | Exportacion | Con contexto cambiado se rechaza y se ofrece re-ejecutar |
-| Degradacion | `origen de la redaccion` refleja correctamente si hubo degradacion |
+| Degradacion | `drafting_origin` refleja correctamente si hubo degradacion |
 | Interoperabilidad | Un consumidor sin entrega incremental obtiene el mismo objeto completo |
 | Estado | Un turno en curso es consultable mientras se ejecuta |
 
@@ -242,7 +242,7 @@ La penultima fila es la que demuestra que la frontera es realmente publica.
 | Contrato unico; la entrega incremental es un modo, no un formato | El mismo resultado se puede entregar de dos maneras | La entrega incremental necesita informacion que el objeto completo no lleva | Sistema |
 | Respuesta y conjunto como objetos separados | Un analisis no es lo mismo que los datos que produjo | Los consumidores necesitan siempre ambos juntos | Sistema |
 | Rechazos como resultado normal, no como error | La mayoria de los rechazos son informacion util | Los consumidores tratan todo rechazo como error igualmente | Sistema |
-| `origen de la redaccion` visible para el cliente | El consumidor tiene derecho a saber si hubo degradacion | Exponerlo confunde sin aportar | Implementacion |
+| `drafting_origin` visible para el cliente | El consumidor tiene derecho a saber si hubo degradacion | Exponerlo confunde sin aportar | Implementacion |
 | Clave de idempotencia opcional | Los consumidores reintentan y los usuarios hacen doble clic | Nadie la usa y el codigo queda muerto | Implementacion |
 | Insuficiencia por presupuesto expuesta como causa propia | Su remedio difiere del de la insuficiencia por criterio | Los consumidores tratan ambas igual | Implementacion |
 

@@ -17,12 +17,13 @@
 > productos de una operacion.
 
 > **Convencion de nomenclatura**
-> El lenguaje canonico del dominio se escribe en espanol (`facturacion_neta`,
-> `comparar_periodos`, `descomponer_variacion`), porque pertenece al negocio del
-> cliente y aparece en la capa semantica, en la interfaz del integrador y en las
-> explicaciones al usuario. El codigo y la infraestructura se escriben en ingles.
-> La frontera es explicita: donde un identificador nombra un concepto del negocio, va
-> en espanol; donde nombra una construccion del programa, va en ingles.
+> Corregido segun `16_instrucciones_ia.md` seccion 7: todo identificador interpretado
+> por software va en **ingles** -- nombres de objetivo y operacion (`net_revenue`,
+> `compare_periods`, `decompose_variance`), parametros, tipos de hecho, causas de
+> rechazo. El **espanol** queda para lo que lee una persona: `business_name`,
+> `description`, `synonyms`, preguntas tipicas, prosa explicativa. La version anterior
+> de esta nota decia lo contrario; quedaba desactualizada desde que se corrigio la
+> regla general.
 
 ---
 
@@ -37,7 +38,7 @@ Para que algo sea una operacion debe cumplir las cinco condiciones:
 1. **Es invocable por el modelo pero no definible por el.** El modelo elige cual usar
    y con que argumentos; no puede crear una nueva ni alterar su comportamiento.
 2. **Declara sus parametros en conceptos del dominio**, nunca en estructura fisica.
-   Recibe `metrica = facturacion_neta`, jamas `tabla = ventas, campo = importe_neto`.
+   Recibe `metric = net_revenue`, jamas `tabla = ventas, campo = importe_neto`.
 3. **Expresa su necesidad de datos como una o mas Peticiones de datos.** No accede a
    la fuente: la describe.
 4. **Su calculo es determinista y reproducible.** Con las mismas entradas produce
@@ -100,17 +101,17 @@ del cliente, son **capacidades del producto**. Son los mismos para todas las con
 
 | Objetivo | Pregunta tipica | Criterio de suficiencia | Umbral configurable |
 |---|---|---|---|
-| `consultar_metrica` | "¿Cuanto vendimos en julio?" | La metrica se obtuvo para el alcance completo pedido | — |
-| `comparar` | "¿Julio contra junio?" | Ambos terminos obtenidos, comparables y con igual definicion | — |
-| `rankear` | "¿Los diez mejores clientes?" | Se obtuvieron N elementos ordenados sobre el universo autorizado completo | N por defecto = 10 |
-| `explicar_variacion` | "¿Por que cayo la facturacion?" | La contribucion acumulada de los factores identificados alcanza el umbral | 70 % por defecto |
-| `detectar_anomalia` | "¿Hay algo raro esta semana?" | Se evaluo la serie completa del periodo con el criterio declarado | Sensibilidad |
-| `describir_conjunto` | "¿Quienes fueron los invitados?" | Se obtuvo el conteo total y una vista previa representativa | — |
-| `explorar` | "¿Como viene el negocio?" | Se cubrieron todas las dimensiones declaradas del panorama | Dimensiones del panorama |
+| `query_metric` | "¿Cuanto vendimos en julio?" | La metrica se obtuvo para el alcance completo pedido | — |
+| `compare` | "¿Julio contra junio?" | Ambos terminos obtenidos, comparables y con igual definicion | — |
+| `rank` | "¿Los diez mejores clientes?" | Se obtuvieron N elementos ordenados sobre el universo autorizado completo | N por defecto = 10 |
+| `explain_variance` | "¿Por que cayo la facturacion?" | La contribucion acumulada de los factores identificados alcanza el umbral | 70 % por defecto |
+| `detect_anomaly` | "¿Hay algo raro esta semana?" | Se evaluo la serie completa del periodo con el criterio declarado | Sensibilidad |
+| `describe_dataset` | "¿Quienes fueron los invitados?" | Se obtuvo el conteo total y una vista previa determinista y acotada | — |
+| `explore` | "¿Como viene el negocio?" | Se cubrieron todas las dimensiones declaradas del panorama | Dimensiones del panorama |
 
 Un objetivo que no esta en el catalogo no puede ser propuesto. Si el modelo interpreta
 una intencion que no mapea a ningun objetivo, la salida correcta es
-`fuera_de_alcance`, con explicacion de que si puede hacerse.
+`out_of_scope`, con explicacion de que si puede hacerse.
 
 ### Relacion entre los tres
 
@@ -131,8 +132,15 @@ flowchart LR
 
 ## 3. Que declara una operacion — ficha de operacion
 
-Toda operacion se define mediante una ficha con los mismos catorce campos. La ficha es
+Toda operacion se define mediante una ficha con los mismos trece campos. La ficha es
 parte del contrato: sin ella la operacion no existe para el sistema.
+
+> **Sin versionado de ficha por ahora.** Ninguna version de operacion se declara todavia
+> porque ningun artefacto la transporta ni la consume: no hay campo `version` en
+> `Fact`, `AnalysisPlan` ni en ningun otro modelo de `14_contratos_formato.md` que la
+> reciba. Si mas adelante hace falta trazabilidad historica de resultados frente a
+> cambios de una operacion, se disena junto con el formato que la transporte -- no se
+> agrega un campo que nadie lee.
 
 | Campo | Contenido |
 |---|---|
@@ -149,7 +157,6 @@ parte del contrato: sin ella la operacion no existe para el sistema.
 | Coste | Numero de accesos a la fuente en el peor caso |
 | Verificacion | Como se prueba en aislamiento |
 | Reutilizable | Si puede resolverse desde un conjunto activo valido |
-| Version | Version de la ficha, para trazabilidad de resultados historicos |
 
 ### Nota sobre "hechos publicados" — cambio respecto de la traza nominal
 
@@ -169,17 +176,17 @@ Un hecho declara:
 | Campo | Contenido |
 |---|---|
 | Identificador | Estable dentro del turno |
-| `turno_id` | Turno que lo produjo. **Frontera de consistencia** |
-| `objetivo_id` | Objetivo al que pertenece |
+| `turn_id` | Turno que lo produjo. **Frontera de consistencia** |
+| `objective_id` | Objetivo al que pertenece |
 | Tipo | Tipo de hecho declarado en la ficha |
 | Valor | Magnitud, texto o elemento, segun el tipo |
 | Unidad | Cuando aplica |
 | Alcance | Universo al que corresponde, incluido el alcance autorizado |
 | Momento de captura | De los datos que lo produjeron, no de su publicacion |
-| Naturaleza de la evidencia | Original o reconstruida |
+| Naturaleza de la evidencia | Original o reconstructed |
 | Invocacion | Referencia a la invocacion que lo produjo |
 
-`turno_id` y `objetivo_id` son los dos ejes de aislamiento de la evidencia, y ambos se
+`turn_id` y `objective_id` son los dos ejes de aislamiento de la evidencia, y ambos se
 comprueban mecanicamente en la validacion de salida. El **momento de captura por hecho**
 es necesario porque una misma respuesta puede apoyarse en hechos capturados en momentos
 distintos: reanudaciones y reutilizacion de conjuntos activos lo producen de forma
@@ -207,17 +214,17 @@ mostrar un **porcentaje sobre un total prohibido**, que permite deducirlo.
 
 | Operacion | Universo | Motivo |
 |---|---|---|
-| `consultar_metrica` | Autorizado | El resultado es correcto dentro del alcance y se declara como tal |
-| `comparar_periodos` | Autorizado | Ambos terminos comparten alcance |
-| `serie_temporal` | Autorizado | Idem |
-| `desglosar` | Autorizado | El desglose es del alcance autorizado y se declara como tal |
-| `rankear` | Autorizado | Un ranking dentro del alcance es valido si se declara el alcance |
-| `descomponer_variacion` | Autorizado | La descomposicion es de la variacion observada dentro del alcance |
-| `contar` | Autorizado | — |
-| `describir_conjunto` | Autorizado | — |
-| `detectar_anomalia` | Autorizado | La serie autorizada es una serie legitima |
-| `calcular_participacion` | **Completo** | El denominador es el total; si no esta autorizado, se rechaza |
-| `comparar_contra_pares` | **Completo** | Requiere el universo de pares, que puede no estar autorizado |
+| `query_metric` | Autorizado | El resultado es correcto dentro del alcance y se declara como tal |
+| `compare_periods` | Autorizado | Ambos terminos comparten alcance |
+| `time_series` | Autorizado | Idem |
+| `breakdown` | Autorizado | El desglose es del alcance autorizado y se declara como tal |
+| `rank` | Autorizado | Un ranking dentro del alcance es valido si se declara el alcance |
+| `decompose_variance` | Autorizado | La descomposicion es de la variacion observada dentro del alcance |
+| `count` | Autorizado | — |
+| `describe_dataset` | Autorizado | — |
+| `detect_anomaly` | Autorizado | La serie autorizada es una serie legitima |
+| `calculate_share` | **Completo** | El denominador es el total; si no esta autorizado, se rechaza |
+| `compare_against_peers` | **Completo** | Requiere el universo de pares, que puede no estar autorizado |
 
 ### Regla de declaracion de alcance
 
@@ -301,16 +308,16 @@ Todas las operaciones materializan conjunto: la columna indica que contiene.
 
 | Operacion | Hechos | Resultado analitico | Contenido del conjunto |
 |---|---|---|---|
-| `consultar_metrica` | Si | Si | La cifra y su alcance |
-| `comparar_periodos` | Si | Si | Los dos valores por periodo |
-| `serie_temporal` | Si | Si | Los puntos de la serie |
-| `desglosar` | Si | Si | La metrica por cada elemento de la dimension |
-| `rankear` | Si | Si | Los elementos ordenados |
-| `descomponer_variacion` | Si | Si | Elementos con variacion y contribucion |
-| `contar` | Si | Si | El conteo y sus filtros |
-| `describir_conjunto` | Si | Si | Las filas del universo descrito |
-| `detectar_anomalia` | Si | Si | La serie completa, con marca de anomalia |
-| `calcular_participacion` | Si | Si | Elemento, total y participacion |
+| `query_metric` | Si | Si | La cifra y su alcance |
+| `compare_periods` | Si | Si | Los dos valores por periodo |
+| `time_series` | Si | Si | Los puntos de la serie |
+| `breakdown` | Si | Si | La metrica por cada elemento de la dimension |
+| `rank` | Si | Si | Los elementos ordenados |
+| `decompose_variance` | Si | Si | Elementos con variacion y contribucion |
+| `count` | Si | Si | El conteo y sus filtros |
+| `describe_dataset` | Si | Si | Las filas del universo descrito |
+| `detect_anomaly` | Si | Si | La serie completa, con marca de anomalia |
+| `calculate_share` | Si | Si | Elemento, total y participacion |
 
 ---
 
@@ -334,34 +341,42 @@ vocabulario**, que es lo que hace verificable la reutilizacion.
 | Universo requerido | Autorizado o completo |
 | Restricciones de acceso | Inyectadas por Contexto de acceso, no negociables |
 
+> **`filters` y `access_filters` nunca se confunden.** `filters` es el parametro que una
+> operacion declara y que el modelo completa desde la pregunta; `access_filters` lo
+> inyecta Contexto de acceso, no lo elige el modelo ni lo declara ninguna ficha. Una
+> ficha de operacion **jamas** tiene `access_filters` entre sus parametros -- si lo
+> tuviera, la restriccion dejaria de viajar antes de la consulta para pasar a depender
+> de que la operacion la pida. `14_contratos_formato.md` seccion 3 ya los separa en
+> `DataRequest` por la misma razon.
+
 ### Ejemplo concreto — de la traza nominal
 
-Operacion `comparar_periodos`, primera peticion:
+Operacion `compare_periods`, primera peticion:
 
 ```
-metricas:      facturacion_neta
-dimensiones:   (ninguna)
-periodo:       2026-06-01 .. 2026-07-31, campo temporal: fecha de emision
-granularidad:  mes
-filtros:       (ninguno)
-orden:         periodo ascendente
-limite:        (no aplica)
-universo:      autorizado
-restricciones: (ninguna, contexto ctx_884 sin restriccion de filas)
+metrics:        net_revenue
+dimensions:     (ninguna)
+period:         2026-06-01 .. 2026-07-31, campo temporal: fecha de emision
+granularity:    mes
+filters:        (ninguno)
+order:          periodo ascendente
+limit:          (no aplica)
+universe:       authorized
+access_filters: (ninguna, contexto ctx_884 sin restriccion de filas)
 ```
 
-Operacion `descomponer_variacion`, segunda peticion:
+Operacion `decompose_variance`, segunda peticion:
 
 ```
-metricas:      facturacion_neta
-dimensiones:   cliente
-periodo:       2026-06-01 .. 2026-07-31, campo temporal: fecha de emision
-granularidad:  mes
-filtros:       (ninguno)
-orden:         (se ordena en el calculo, no en la fuente)
-limite:        (no aplica)
-universo:      autorizado
-restricciones: (ninguna)
+metrics:        net_revenue
+dimensions:     customer
+period:         2026-06-01 .. 2026-07-31, campo temporal: fecha de emision
+granularity:    mes
+filters:        (ninguno)
+order:          (se ordena en el calculo, no en la fuente)
+limit:          (no aplica)
+universe:       authorized
+access_filters: (ninguna)
 ```
 
 Devuelve 1.240 filas por dos periodos. El calculo de variacion absoluta, contribucion
@@ -371,16 +386,16 @@ identico en cualquier motor y testeable sin base de datos.
 ### Ejemplo de descriptor de cobertura resultante
 
 ```
-metricas:        facturacion_neta
-dimensiones:     cliente
-periodo:         2026-06-01 .. 2026-07-31
-granularidad:    mes
-filtros:         (ninguno)
-universo:        todos los clientes con actividad en el rango
-columnas:        cliente, facturacion junio, facturacion julio, variacion, contribucion
-contexto:        ctx_884
-version semantica: sem_v7
-captura:         2026-08-15 14:32
+metrics:          net_revenue
+dimensions:       customer
+period:           2026-06-01 .. 2026-07-31
+granularity:      mes
+filters:          (ninguno)
+universe:         todos los clientes con actividad en el rango
+columns:          customer, net_revenue_june, net_revenue_july, variance, contribution
+context_id:       ctx_884
+semantic_version: sem_v7
+captured_at:      2026-08-15 14:32
 ```
 
 Mismo vocabulario que la peticion, mas cuatro campos de validez. La comparacion entre
@@ -398,20 +413,20 @@ acota, o consulta de nuevo.
 
 | Causa | Origen | Accion sugerida |
 |---|---|---|
-| `concepto_inexistente` | Conocimiento | Ofrecer conceptos disponibles |
-| `concepto_no_autorizado` | Contexto de acceso | Informar limitacion, sin revelar el concepto |
-| `dimension_incompatible` | Conocimiento | Ofrecer dimensiones combinables |
-| `granularidad_no_disponible` | Conocimiento | Ofrecer la granularidad minima real |
-| `parametros_invalidos` | Operaciones | Corregir la invocacion (reintento del plan) |
-| `universo_insuficiente` | Operaciones + Contexto | Informar que el calculo no es posible con el alcance |
-| `limite_filas_excedido` | Acceso a datos | Pedir acotar o agregar |
-| `limite_tiempo_excedido` | Acceso a datos | Pedir acotar el periodo |
-| `periodo_sin_datos` | Acceso a datos | Ofrecer periodos cercanos con datos |
-| `fuente_no_disponible` | Acceso a datos | Interrupcion recuperable |
+| `nonexistent_concept` | Conocimiento | Ofrecer conceptos disponibles |
+| `unauthorized_concept` | Contexto de acceso | Informar limitacion, sin revelar el concepto |
+| `incompatible_dimension` | Conocimiento | Ofrecer dimensiones combinables |
+| `granularity_not_available` | Conocimiento | Ofrecer la granularidad minima real |
+| `invalid_parameters` | Operaciones | Corregir la invocacion (reintento del plan) |
+| `insufficient_universe` | Operaciones + Contexto | Informar que el calculo no es posible con el alcance |
+| `row_limit_exceeded` | Acceso a datos | Pedir acotar o agregar |
+| `time_limit_exceeded` | Acceso a datos | Pedir acotar el periodo |
+| `period_without_data` | Acceso a datos | Ofrecer periodos cercanos con datos |
+| `source_not_available` | Acceso a datos | Interrupcion recuperable |
 
 ### Regla de silencio selectivo
 
-`concepto_no_autorizado` se informa como limitacion de alcance **sin nombrar el
+`unauthorized_concept` se informa como limitacion de alcance **sin nombrar el
 concepto**. Decir "no podes ver el margen" confirma que el margen existe y esta
 calculado. Coherente con el filtrado del catalogo entregado al modelo: si no aparece
 en el catalogo, tampoco aparece en el rechazo.
@@ -420,43 +435,43 @@ en el catalogo, tampoco aparece en el rechazo.
 
 ## 8. Catalogo inicial — fichas
 
-### 8.1 `comparar_periodos`
+### 8.1 `compare_periods`
 
 | Campo | Contenido |
 |---|---|
 | Proposito | Obtener una metrica en dos periodos y su variacion |
-| Parametros | `metrica` (obligatorio), `periodo_actual` (obligatorio), `periodo_comparacion` (obligatorio), `filtros` (opcional) |
+| Parametros | `metric` (obligatorio), `current_period` (obligatorio), `comparison_period` (obligatorio), `filters` (opcional) |
 | Precondiciones | Metrica existente, comparable en el tiempo, ambos periodos resueltos a fechas |
 | Universo | Autorizado |
 | Peticiones | Una, con granularidad correspondiente a los periodos |
 | Calculo | Diferencia absoluta y relativa |
 | Productos | Hechos, resultado analitico |
-| Hechos | `valor_periodo` x2, `variacion_absoluta`, `variacion_relativa` |
-| Rechazo propio | `periodos_solapados`, `periodos_de_distinta_longitud` (advertencia, no rechazo) |
+| Hechos | `period_value` x2, `absolute_variance`, `relative_variance` |
+| Rechazo propio | `overlapping_periods`, `periods_of_different_length` (advertencia, no rechazo) |
 | Coste | 1 acceso |
 | Verificacion | Datos fijos de dos periodos, comprobar variacion esperada |
 | Reutilizable | Si, si el conjunto activo cubre ambos periodos y la granularidad es derivable |
 
 **Ejemplo de salida (traza nominal):**
-`valor_periodo(2026-06) = 4.812.400 ARS` · `valor_periodo(2026-07) = 4.176.900 ARS` ·
-`variacion_absoluta = -635.500 ARS` · `variacion_relativa = -13,2 %` ·
+`period_value(2026-06) = 4.812.400 ARS` · `period_value(2026-07) = 4.176.900 ARS` ·
+`absolute_variance = -635.500 ARS` · `relative_variance = -13,2 %` ·
 alcance: todos los clientes.
 
 ---
 
-### 8.2 `descomponer_variacion`
+### 8.2 `decompose_variance`
 
 | Campo | Contenido |
 |---|---|
 | Proposito | Repartir una variacion observada entre los elementos de una dimension |
-| Parametros | `metrica`, `periodo_actual`, `periodo_comparacion`, `dimension`, `umbral_cobertura` (por defecto del objetivo), `filtros` (opcional) |
+| Parametros | `metric`, `current_period`, `comparison_period`, `dimension`, `coverage_threshold` (por defecto del objetivo), `filters` (opcional) |
 | Precondiciones | Metrica y dimension combinables; dimension con cardinalidad manejable |
 | Universo | Autorizado |
 | Peticiones | Una, con la dimension como agrupacion |
 | Calculo | Variacion por elemento, contribucion sobre la variacion total, orden descendente por magnitud de contribucion, corte por contribucion acumulada |
 | Productos | Hechos, resultado analitico, conjunto de datos |
-| Hechos | `contribuyente_principal` (uno por elemento sobre el corte), `cobertura_explicada`, `cardinalidad_dimension` |
-| Rechazo propio | `cardinalidad_excesiva` (dimension con demasiados elementos distintos), `variacion_nula` (no hay nada que descomponer) |
+| Hechos | `main_contributor` (uno por elemento sobre el corte), `explained_coverage`, `dimension_cardinality` |
+| Rechazo propio | `excessive_cardinality` (dimension con demasiados elementos distintos), `zero_variance` (no hay nada que descomponer) |
 | Coste | 1 acceso |
 | Verificacion | Conjunto fijo con contribuciones conocidas; comprobar suma de contribuciones = 100 % |
 | Reutilizable | Si, si el conjunto activo contiene la dimension como columna |
@@ -472,52 +487,193 @@ total. Un cliente que representa el 2 % de la facturacion puede explicar el 40 %
 caida. Confundir ambas cosas es el error mas comun en este tipo de analisis.
 
 **Ejemplo de salida (traza nominal):**
-tres `contribuyente_principal` · `cobertura_explicada = 72 %` ·
-`cardinalidad_dimension = 1.240` · conjunto `ds_301`.
+tres `main_contributor` · `explained_coverage = 72 %` ·
+`dimension_cardinality = 1.240` · conjunto `ds_301`.
 
 ---
 
-### 8.3 `rankear`
+### 8.3 `rank`
 
 | Campo | Contenido |
 |---|---|
 | Proposito | Ordenar elementos de una dimension por una metrica |
-| Parametros | `metrica`, `dimension`, `periodo`, `n` (por defecto 10), `sentido` (por defecto descendente), `filtros` (opcional) |
+| Parametros | `metric`, `dimension`, `period`, `n` (por defecto 10), `direction` (por defecto descending), `filters` (opcional) |
 | Precondiciones | Metrica y dimension combinables |
 | Universo | Autorizado, con declaracion obligatoria de alcance |
 | Peticiones | Una, con orden y limite en la fuente |
 | Calculo | Ninguno adicional: el orden lo resuelve la fuente |
-| Productos | Hechos, resultado analitico, conjunto si supera umbral |
-| Hechos | `elemento_ranking` x n, `total_universo`, `alcance_universo` |
-| Rechazo propio | `n_excesivo` |
+| Productos | Hechos, resultado analitico, conjunto de datos (siempre se materializa, seccion 5) |
+| Hechos | `ranking_element` x n, `universe_total`, `universe_scope` |
+| Rechazo propio | `excessive_n` |
 | Coste | 1 acceso |
 | Verificacion | Conjunto fijo con orden conocido; comprobar empates y estabilidad del orden |
 | Reutilizable | Si, si el conjunto activo contiene la dimension y la metrica |
 
 ---
 
-### 8.4 Resto del catalogo inicial
+### 8.4 `query_metric`
 
-| Operacion | Proposito | Productos distintivos |
-|---|---|---|
-| `consultar_metrica` | Valor de una metrica en un alcance | `valor_metrica` |
-| `desglosar` | Una metrica abierta por los elementos de una dimension, sin ordenar ni comparar | `valor_por_elemento` x n, `cardinalidad_dimension`, `alcance_universo` |
-| `serie_temporal` | Evolucion de una metrica por granularidad | `punto_serie` x n, `tendencia` |
-| `contar` | Cardinalidad de un universo bajo filtros | `conteo` |
-| `describir_conjunto` | Conteo, columnas y vista previa representativa de un universo | `conteo`, `columnas_disponibles`, vista previa |
-| `detectar_anomalia` | Puntos fuera del comportamiento esperado de una serie | `punto_anomalo` x n, `criterio_aplicado` |
-| `calcular_participacion` | Peso de un elemento sobre un total | `participacion`, `total_universo` (requiere universo completo) |
+| Campo | Contenido |
+|---|---|
+| Proposito | Valor de una metrica en un alcance |
+| Parametros | `metric` (obligatorio), `period` (obligatorio), `filters` (opcional) |
+| Precondiciones | Metrica existente |
+| Universo | Autorizado |
+| Peticiones | Una, sin agrupacion |
+| Calculo | Ninguno adicional: el valor lo resuelve la fuente |
+| Productos | Hechos, resultado analitico, conjunto de datos |
+| Hechos | `metric_value` |
+| Rechazo propio | Ninguna adicional a las genericas |
+| Coste | 1 acceso |
+| Verificacion | Datos fijos de un periodo, comprobar el valor esperado |
+| Reutilizable | Si, si el conjunto activo cubre el periodo y la metrica |
+
+---
+
+### 8.5 `breakdown`
+
+| Campo | Contenido |
+|---|---|
+| Proposito | Una metrica abierta por los elementos de una dimension, sin ordenar ni comparar |
+| Parametros | `metric` (obligatorio), `dimension` (obligatorio), `period` (obligatorio), `filters` (opcional) |
+| Precondiciones | Metrica y dimension combinables |
+| Universo | Autorizado |
+| Peticiones | Una, con la dimension como agrupacion |
+| Calculo | Ninguno adicional: la apertura la resuelve la fuente |
+| Productos | Hechos, resultado analitico, conjunto de datos |
+| Hechos | `value_per_element` x n, `dimension_cardinality`, `universe_scope` |
+| Rechazo propio | Ninguna propia. **No** comparte `excessive_cardinality` con `decompose_variance`: queda sujeta a los limites generales de filas y materializacion (seccion 5), porque no reparte una variacion ni corta por contribucion acumulada -- simplemente abre la metrica, sin importar cuantos elementos tenga la dimension |
+| Coste | 1 acceso |
+| Verificacion | Conjunto fijo con valores conocidos por elemento; comprobar que la suma coincide con el total |
+| Reutilizable | Si, si el conjunto activo contiene la dimension y la metrica |
+
+---
+
+### 8.6 `time_series`
+
+| Campo | Contenido |
+|---|---|
+| Proposito | Evolucion de una metrica por granularidad |
+| Parametros | `metric` (obligatorio), `period` (obligatorio), `granularity` (**obligatorio**), `filters` (opcional) |
+| Precondiciones | Metrica existente, con campo temporal disponible para la granularidad pedida |
+| Universo | Autorizado |
+| Peticiones | Una, con la granularidad pedida |
+| Calculo | Ninguno adicional: la serie la resuelve la fuente |
+| Productos | Hechos, resultado analitico, conjunto de datos |
+| Hechos | `series_point` x n |
+| Rechazo propio | Ninguna adicional a las genericas |
+| Coste | 1 acceso |
+| Verificacion | Serie fija con puntos conocidos; comprobar granularidad y orden temporal |
+| Reutilizable | Si, si el conjunto activo cubre el periodo con igual o mayor granularidad |
+
+**Sin `trend` en esta version.** La tabla de productos distintivos traia `trend` sin que
+ningun documento definiera como se calcula. Publicar un hecho sin definicion matematica
+es afirmar algo no definido solo porque quedo un nombre en una tabla: se retira hasta
+que haya una definicion, igual criterio que el punto abierto 3 aplica a `detect_anomaly`.
+
+---
+
+### 8.7 `count`
+
+| Campo | Contenido |
+|---|---|
+| Proposito | Cardinalidad de un universo bajo filtros |
+| Parametros | `filters` (opcional). Sin `metric`: no mide una magnitud, cuenta filas |
+| Precondiciones | Filtros expresables en vocabulario canonico, si existen |
+| Universo | Autorizado |
+| Peticiones | Una, sin metrica ni agrupacion, solo conteo |
+| Calculo | Ninguno adicional |
+| Productos | Hechos, resultado analitico, conjunto de datos |
+| Hechos | `count` |
+| Rechazo propio | Ninguna adicional a las genericas |
+| Coste | 1 acceso |
+| Verificacion | Universo fijo con conteo conocido |
+| Reutilizable | Si, si el conjunto activo cubre el mismo universo y filtros |
+
+---
+
+### 8.8 `describe_dataset`
+
+| Campo | Contenido |
+|---|---|
+| Proposito | Conteo, columnas y vista previa determinista y acotada de un universo |
+| Parametros | `filters` (opcional). Sin `metric` |
+| Precondiciones | Ninguna mas alla del universo autorizado |
+| Universo | Autorizado |
+| Peticiones | Una, sin agrupacion, con vista previa determinista y acotada |
+| Calculo | Ninguno adicional |
+| Productos | Hechos, resultado analitico, conjunto de datos |
+| Hechos | `count`, `available_columns` |
+| Rechazo propio | Ninguna adicional a las genericas |
+| Coste | 1 acceso |
+| Verificacion | Universo fijo; comprobar conteo, columnas disponibles, y que la vista previa es determinista y acotada -- no se exige representatividad estadistica, ninguna inferencia numerica se apoya en ella |
+| Reutilizable | Si, si el conjunto activo cubre el mismo universo |
+
+---
+
+### 8.9 `detect_anomaly`
+
+| Campo | Contenido |
+|---|---|
+| Proposito | Puntos fuera del comportamiento esperado de una serie |
+| Parametros | `metric` (obligatorio), `period` (obligatorio), `sensitivity` (opcional; por defecto, valor configurado del objetivo) |
+| Precondiciones | Metrica existente, con serie temporal disponible |
+| Universo | Autorizado |
+| Peticiones | Una, con granularidad de serie |
+| Calculo | Aplica a la serie completa del periodo un criterio de anomalia configurado externamente y declara el criterio aplicado. **El metodo concreto que implementa ese criterio es el punto abierto 3 de la seccion 12** y no se fija en este bloque |
+| Productos | Hechos, resultado analitico, conjunto de datos |
+| Hechos | `anomalous_point` x n, `applied_criterion` |
+| Rechazo propio | Ninguna propia definida en este bloque. Las causas especificas dependientes del metodo se incorporaran cuando se resuelva el punto abierto 3 |
+| Coste | 1 acceso |
+| Verificacion | Con una implementacion de prueba determinista del criterio (un doble de prueba, no un metodo estadistico real): comprobar que la operacion aplica el criterio recibido a toda la serie, marca los puntos que ese criterio senala y publica `applied_criterion` con el criterio efectivamente usado. Mismo enfoque que la verificacion de `compare_periods` con datos fijos: prueba el mecanismo de la operacion, no la validez estadistica de un metodo que todavia no se elige |
+| Reutilizable | Si, si el conjunto activo cubre el periodo con la granularidad de la serie |
+
+La operacion permanece en el catalogo porque su contrato **no depende** del metodo
+concreto: declara que aplica un criterio configurado a la serie completa, que declara
+el criterio aplicado y que publica `anomalous_point` y `applied_criterion`. Calculo y
+verificacion ya quedan completos en terminos contractuales abstractos; solo el metodo
+estadistico concreto y la causa de rechazo que dependa de el quedan pendientes del punto
+abierto 3.
+
+**Sobre `sensitivity`:** por analogia con `coverage_threshold` en `decompose_variance`
+(8.2), el mismo valor configurado del objetivo puede alimentar tanto el criterio de
+suficiencia del Ejecutor como el parametro de la operacion que lo consume. Lo que
+**no** esta decidido es si Interpretacion (el modelo) puede proponer un valor propio de
+`sensitivity` que sobrescriba el del objetivo -- ningun documento le otorga hoy esa
+autoridad. Hasta que se decida explicitamente, `sensitivity` se documenta solo con su
+valor por defecto; ver punto abierto 5 de la seccion 12.
+
+---
+
+### 8.10 `calculate_share`
+
+| Campo | Contenido |
+|---|---|
+| Proposito | Peso de un elemento sobre un total |
+| Parametros | `metric` (obligatorio), `dimension` (obligatorio), `element` (obligatorio; el valor puntual de `dimension` cuyo peso se calcula), `period` (obligatorio), `filters` (opcional; filtros generales, se aplican tanto al numerador como al denominador) |
+| Precondiciones | Metrica y dimension combinables; universo completo autorizado para el denominador |
+| Universo | **Completo** |
+| Peticiones | **Dos**: la del numerador aplica `filters` mas el filtro puntual `dimension = element`; la del denominador aplica solo `filters`, agregado sobre todo el universo completo de `dimension` (sin la restriccion de `element`). Ambas bajo **captura compatible o comun** -- sin eso, el elemento y el total podrian provenir de estados distintos de la fuente y la participacion resultante seria incoherente (coherencia de captura, `01_metodo_solucion.md` seccion 9 invariante 12) |
+| Calculo | Participacion del elemento sobre el total del universo completo |
+| Productos | Hechos, resultado analitico, conjunto de datos |
+| Hechos | `share`, `universe_total` |
+| Rechazo propio | `insufficient_universe` (causa generica de la seccion 7; no se define una nueva) |
+| Coste | **2 accesos** (numerador y denominador) |
+| Verificacion | Con datos fijos, comprobar exactamente `share = numerator / universe_total`, que el denominador corresponde al universo completo autorizado, que los filtros generales se aplican a ambos lados, que `dimension = element` solo se aplica al numerador y que numerador y denominador provienen de captura compatible |
+| Reutilizable | Si, si el conjunto activo cubre el universo completo con la dimension y la metrica |
+
+---
 
 Diez operaciones y siete objetivos. Deliberadamente pocas: coherente con el principio
 de que un conjunto acotado de capacidades coherentes vale mas que un catalogo extenso
 a medias. **El catalogo no crece hasta haber corrido el banco de preguntas reales**:
 la evidencia de que falta una operacion es que preguntas legitimas caigan en
-`fuera_de_alcance`, no la intuicion de que podria hacer falta.
+`out_of_scope`, no la intuicion de que podria hacer falta.
 
-`desglosar` y `rankear` se parecen y conviene no confundirlas: `desglosar` responde
-"cuanto vendio cada region", `rankear` responde "las cinco mejores regiones". La
+`breakdown` y `rank` se parecen y conviene no confundirlas: `breakdown` responde
+"cuanto vendio cada region", `rank` responde "las cinco mejores regiones". La
 primera devuelve el universo, la segunda un recorte ordenado. Una pregunta que pide
-las dos cosas usa `desglosar` y ordena sobre el conjunto derivado.
+las dos cosas usa `breakdown` y ordena sobre el conjunto derivado.
 
 ---
 
@@ -565,7 +721,7 @@ lenguaje. Esa propiedad es intencional y conviene defenderla en la implementacio
 
 | Nivel | Que verifica | Como |
 |---|---|---|
-| Ficha | Toda operacion del catalogo declara los catorce campos | Prueba estructural sobre el catalogo |
+| Ficha | Toda operacion del catalogo declara los trece campos | Prueba estructural sobre el catalogo |
 | Validacion | Invocaciones invalidas se rechazan con la causa correcta | Casos de invocacion malformada |
 | Construccion de peticion | La peticion generada corresponde al calculo y lleva las restricciones de acceso | Comparacion contra peticion esperada |
 | Calculo | Resultados correctos sobre datos fijos | Datos de prueba con resultado conocido |
@@ -583,13 +739,13 @@ analitico correcto de uno que funciona con el caso probado.
 
 | Decision | Supuesto | Senal de invalidacion | Tipo |
 |---|---|---|---|
-| Catalogo cerrado de operaciones | Las preguntas reales de negocio se cubren con un catalogo acotado | Mas del 30 % de las preguntas de prueba caen en `fuera_de_alcance` | Sistema |
+| Catalogo cerrado de operaciones | Las preguntas reales de negocio se cubren con un catalogo acotado | Mas del 30 % de las preguntas de prueba caen en `out_of_scope` | Sistema |
 | Catalogo cerrado de objetivos con criterio de suficiencia | La terminacion puede decidirse deterministamente | Aparecen objetivos legitimos sin criterio expresable numericamente | Sistema |
 | Cada operacion publica sus propios hechos | El Ejecutor no necesita conocer la semantica de los resultados | Un tipo de hecho requiere logica de composicion en el Ejecutor | Sistema |
 | Calculo derivado en zona determinista, no en la fuente | El resultado reducido cabe comodamente en memoria | Un calculo necesita operar sobre volumenes que no se pueden traer | Sistema |
 | Rechazo de operaciones que exigen universo no autorizado | Es preferible no responder a responder con un total enganoso | Aparece un caso donde el rechazo bloquea un uso legitimo y frecuente | Sistema |
 | Materializacion siempre, con descriptor en dos capas | El coste de conservar conjuntos pequenos es despreciable frente a la consistencia que garantiza | La sesion acumula conjuntos hasta volverse costosa en almacenamiento | Sistema |
-| Identificadores canonicos del dominio en espanol | El vocabulario de negocio es del cliente, no del codigo | Un consumidor externo de la API necesita identificadores en ingles | Sistema |
+| ~~Identificadores canonicos del dominio en espanol~~ **Invalidada** -- ver `16_instrucciones_ia.md` seccion 7 | El vocabulario de negocio es del cliente, no del codigo | Se corrigio: un consumidor externo de la API necesita identificadores en ingles, y el banco de casos ya se construyo en ingles | Sistema |
 | El catalogo de objetivos pertenece a esta parte | El criterio de suficiencia se expresa sobre hechos, que publican las operaciones | Aparecen objetivos sin relacion con ninguna operacion | Sistema |
 | Coherencia de captura obligatoria en calculos derivados | Hechos correctos sobre estados distintos producen respuestas incoherentes | Re-ejecutar por coherencia resulta prohibitivamente caro | Sistema |
 
@@ -599,12 +755,17 @@ analitico correcto de uno que funciona con el caso probado.
 
 1. **Capacidad maxima de conjuntos activos por sesion.** Numero y tamano total
    pendientes de la revision adversarial, junto con la politica de desalojo.
-2. **Cardinalidad maxima de una dimension** para `descomponer_variacion`: valor
+2. **Cardinalidad maxima de una dimension** para `decompose_variance`: valor
    concreto pendiente de la revision adversarial.
-3. **Criterio de `detectar_anomalia`**: el metodo estadistico concreto es decision de
+3. **Criterio de `detect_anomaly`**: el metodo estadistico concreto es decision de
    implementacion, pero el criterio aplicado debe publicarse como hecho.
 4. **Comparacion de periodos de distinta longitud**: definido como advertencia; falta
    decidir si ademas se normaliza.
+5. **Autoridad para sobrescribir un umbral configurado del objetivo.** `sensitivity` en
+   `detect_anomaly` (8.9) toma por defecto el valor configurado del objetivo, igual que
+   `coverage_threshold` en `decompose_variance` (8.2). No esta decidido si Interpretacion
+   puede proponer un valor propio que lo sobrescriba, ni bajo que condiciones. Hasta que
+   se decida, ambos parametros se documentan solo con su valor por defecto.
 
 
 ---

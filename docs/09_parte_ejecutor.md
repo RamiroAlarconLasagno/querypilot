@@ -131,7 +131,7 @@ cuatro salidas, sin interpretar:
 |---|---|
 | Definitiva por permisos | Informar limitacion de alcance, sin nombrar el concepto |
 | Corregible por el modelo | Un reintento de planificacion con la causa concreta |
-| Resoluble por el usuario | Estado `espera_aclaracion` con opciones concretas |
+| Resoluble por el usuario | Estado `awaiting_clarification` con opciones concretas |
 | Requiere acotar | Informar el limite y ofrecer reduccion de alcance |
 
 Un rechazo corregible consume el unico reintento de planificacion disponible. No hay
@@ -151,10 +151,10 @@ Ejemplos de la traza nominal:
 
 ```
 Condicion del paso 2:
-  hecho(variacion_relativa) < 0
+  fact(relative_variance) < 0
 
-Criterio de suficiencia del objetivo explicar_variacion:
-  hecho(cobertura_explicada) >= umbral_configurado(cobertura_minima)
+Criterio de suficiencia del objetivo explain_variance:
+  fact(explained_coverage) >= configured_threshold(min_coverage)
   evaluado: 72 % >= 70 %  ->  satisfecho
 ```
 
@@ -274,7 +274,7 @@ distinto: acotar la pregunta, no cambiar los datos.
 
 Entrada acotada y explicita: objetivo original, plan ejecutado, hechos obtenidos,
 causa de insuficiencia, catalogos filtrados. **No puede cambiar el objetivo.** Si el
-objetivo era incorrecto, el camino valido es `espera_aclaracion`, no replanificar
+objetivo era incorrecto, el camino valido es `awaiting_clarification`, no replanificar
 hacia otra cosa.
 
 Una insuficiencia que persiste tras la ronda 2 **no es un fallo**: es una respuesta
@@ -297,12 +297,12 @@ conceptual, no fusionados**:
   falla o es rechazado, el dependiente se marca `no_ejecutado` con esa causa.
 - Ningun objetivo hereda periodo, filtros ni alcance de otro sin dependencia declarada.
 
-Los hechos publicados llevan `objetivo_id` y `turno_id`, para que la respuesta minima y
+Los hechos publicados llevan `objective_id` y `turn_id`, para que la respuesta minima y
 la validacion de salida no mezclen evidencia entre objetivos ni entre turnos.
 
 > **El turno es una frontera de consistencia.** Contexto de acceso, version semantica y
 > espacio de evidencia son constantes dentro de un turno.
-> Reanudar conserva el mismo `turno_id`;
+> Reanudar conserva el mismo `turn_id`;
 > rehacer crea uno nuevo. Dentro de un turno se mantienen el mismo contexto de acceso y
 > el mismo espacio de evidencia. Citar un hecho de otro turno no es solo un error de
 > trazabilidad: ese hecho pudo producirse bajo otro contexto de acceso, y seria una fuga
@@ -329,13 +329,13 @@ El Ejecutor no almacena: le pide a Sesion que persista. Pero decide **que** y
 
 ### Resultados de un intento superado
 
-Toda llamada al modelo y toda consulta a la fuente llevan `turno_id` e **`intento_id`**.
+Toda llamada al modelo y toda consulta a la fuente llevan `turn_id` e **`attempt_id`**.
 
-> Un resultado cuyo `intento_id` ya no es el vigente **se descarta sin procesar** y se
+> Un resultado cuyo `attempt_id` ya no es el vigente **se descarta sin procesar** y se
 > registra como llegada tardia.
 
 Sin esto, una respuesta del modelo que llega despues del limite —cuando el turno ya paso
-a `recuperable` y quizas ya fue reanudado— se procesaria como si fuera actual, con dos
+a `recoverable` y quizas ya fue reanudado— se procesaria como si fuera actual, con dos
 resultados en vuelo para el mismo paso.
 
 Registrar **antes** de invocar es lo que distingue "no se ejecuto" de "se ejecuto y no
@@ -346,7 +346,7 @@ ejecutada.
 
 1. Verificar que el contexto de acceso sigue vigente. Si cambio: **no se reanuda**, se
    reinicia bajo el contexto actual.
-2. Verificar que la ventana de `recuperable` no vencio. Si vencio: pasa a `fallida` y
+2. Verificar que la ventana de `recoverable` no vencio. Si vencio: pasa a `failed` y
    solo puede rehacerse.
 3. Verificar que la version semantica no cambio. Si cambio: se rehace.
 4. Localizar el ultimo paso con registro posterior completo.
@@ -368,21 +368,21 @@ una falla.
 | Clase | Ejemplo | Estrategia |
 |---|---|---|
 | **Rechazo** | Concepto inexistente, limite excedido, sin permiso | Esperado y deterministico. Informa, aclara o acota. No interrumpe |
-| **Interrupcion** | Modelo no disponible, fuente caida, tiempo agotado | `interrumpida` -> `recuperable`. Conserva lo obtenido |
-| **Fallo definitivo** | Ventana vencida, contexto cambiado, version semantica cambiada | `fallida`. Solo puede rehacerse |
+| **Interrupcion** | Modelo no disponible, fuente caida, tiempo agotado | `interrupted` -> `recoverable`. Conserva lo obtenido |
+| **Fallo definitivo** | Ventana vencida, contexto cambiado, version semantica cambiada | `failed`. Solo puede rehacerse |
 
 ### Por origen
 
 | Origen | Comportamiento |
 |---|---|
-| Modelo no responde en interpretacion | `recuperable` sin nada ejecutado. Reintento de turno completo |
+| Modelo no responde en interpretacion | `recoverable` sin nada ejecutado. Reintento de turno completo |
 | Modelo no responde en replanificacion | Se responde con lo obtenido en ronda 1, declarando insuficiencia |
 | Modelo no responde en sintesis | Sale la respuesta minima determinista. **No es interrupcion** |
 | Modelo propone algo invalido | Rechazo corregible. Un reintento con la causa |
 | Operacion falla por parametros | Rechazo corregible |
-| Fuente no disponible | `recuperable`, conservando pasos previos |
+| Fuente no disponible | `recoverable`, conservando pasos previos |
 | Fuente supera limite de tiempo | Rechazo: informar y ofrecer acotar el periodo |
-| Contexto cambia durante interrupcion | `fallida`. Se rehace bajo contexto vigente |
+| Contexto cambia durante interrupcion | `failed`. Se rehace bajo contexto vigente |
 
 La fila mas importante es la tercera: **la caida del modelo durante la sintesis no
 degrada el sistema a un estado de error**, porque la respuesta minima ya existe.
@@ -441,7 +441,7 @@ son legitimas. **No puede comprobar que la relacion afirmada sea cierta.** Una
 interpretacion como "la caida se concentra en tres clientes" pasa la validacion aunque
 sus hechos digan lo contrario.
 
-Por eso la distincion `dato` / `interpretacion` / `hipotesis` es un mecanismo de
+Por eso la distincion `data` / `interpretation` / `hypothesis` es un mecanismo de
 seguridad y no una decoracion: los datos se validan mecanicamente; las
 interpretaciones solo en cuanto a que su evidencia exista y este en alcance.
 
@@ -457,41 +457,41 @@ plantillas para las relaciones frecuentes.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> recibida
-    recibida --> interpretando
-    interpretando --> espera_aclaracion
-    espera_aclaracion --> interpretando
-    interpretando --> planificada
-    planificada --> ejecutando
-    ejecutando --> espera_aclaracion
-    espera_aclaracion --> ejecutando
-    ejecutando --> replanificando
-    replanificando --> ejecutando
-    ejecutando --> sintetizando
-    sintetizando --> respondida
-    interpretando --> rechazada
-    planificada --> rechazada
-    ejecutando --> rechazada
-    interpretando --> interrumpida
-    ejecutando --> interrumpida
-    sintetizando --> respondida : respuesta minima
-    interrumpida --> recuperable
-    recuperable --> ejecutando : reanudada
-    recuperable --> fallida : ventana vencida
-    espera_aclaracion --> fallida : ventana vencida
-    respondida --> [*]
-    rechazada --> [*]
-    fallida --> [*]
+    [*] --> received
+    received --> interpreting
+    interpreting --> awaiting_clarification
+    awaiting_clarification --> interpreting
+    interpreting --> planned
+    planned --> executing
+    executing --> awaiting_clarification
+    awaiting_clarification --> executing
+    executing --> replanning
+    replanning --> executing
+    executing --> synthesizing
+    synthesizing --> answered
+    interpreting --> rejected
+    planned --> rejected
+    executing --> rejected
+    interpreting --> interrupted
+    executing --> interrupted
+    synthesizing --> answered : respuesta minima
+    interrupted --> recoverable
+    recoverable --> executing : reanudada
+    recoverable --> failed : ventana vencida
+    awaiting_clarification --> failed : ventana vencida
+    answered --> [*]
+    rejected --> [*]
+    failed --> [*]
 ```
 
 | Terminacion | Significado |
 |---|---|
-| `respondida` | Con sintesis validada, o con respuesta minima |
-| `respondida` con insuficiencia | Se agotaron las rondas sin alcanzar el criterio; se declara |
-| `rechazada` | Causa determinista informada, con accion sugerida |
-| `fallida` | Ventana vencida, contexto o version semantica cambiados |
+| `answered` | Con sintesis validada, o con respuesta minima |
+| `answered` con insuficiencia | Se agotaron las rondas sin alcanzar el criterio; se declara |
+| `rejected` | Causa determinista informada, con accion sugerida |
+| `failed` | Ventana vencida, contexto o version semantica cambiados |
 
-`espera_aclaracion` tiene su propia ventana de validez, igual que `recuperable`.
+`awaiting_clarification` tiene su propia ventana de validez, igual que `recoverable`.
 
 ### Dos familias de estados
 
@@ -500,8 +500,8 @@ que el servicio tenga errores.
 
 | Familia | Estados | Que indican |
 |---|---|---|
-| **Resultados normales del dominio** | `respondida`, `rechazada`, `espera_aclaracion` | El sistema funciono. Una tasa alta de rechazos senala catalogo insuficiente o preguntas fuera de alcance, no fallas |
-| **Situaciones operativas** | `interrumpida`, `recuperable`, `fallida` | Algo fallo: modelo, fuente, o vencimiento |
+| **Resultados normales del dominio** | `answered`, `rejected`, `awaiting_clarification` | El sistema funciono. Una tasa alta de rechazos senala catalogo insuficiente o preguntas fuera de alcance, no fallas |
+| **Situaciones operativas** | `interrupted`, `recoverable`, `failed` | Algo fallo: modelo, fuente, o vencimiento |
 
 Las metricas de producto y las de operacion se leen por separado, y esta clasificacion
 es la que lo permite.
@@ -600,7 +600,7 @@ conviene que existan desde el primer dia.
 | Respuesta minima en todos los turnos | Construirla es barato comparado con el analisis | Su construccion resulta costosa en turnos grandes | Sistema |
 | Validacion de salida como responsabilidad interna | No crecera lo suficiente para justificar caja propia | Aparecen reglas de validacion con estado o configuracion propia | Implementacion |
 | Presupuesto global de turno ademas de limites por objetivo | Los limites por objetivo no acotan el turno completo | El presupuesto corta turnos legitimos con frecuencia | Sistema |
-| `intento_id` en toda llamada externa | Resultados tardios de intentos superados son posibles | — | Sistema |
+| `attempt_id` en toda llamada externa | Resultados tardios de intentos superados son posibles | — | Sistema |
 | La coherencia de captura prevalece sobre la reutilizacion | Es preferible re-consultar a mostrar cifras que no cierran | El coste de re-ejecutar domina el turno | Sistema |
 
 ---
@@ -608,14 +608,14 @@ conviene que existan desde el primer dia.
 ## 15. Puntos abiertos
 
 1. **Invocaciones maximas por ronda.** Pendiente de la revision adversarial.
-2. **Ventana de validez** de `recuperable` y de `espera_aclaracion`. Probablemente
+2. **Ventana de validez** de `recoverable` y de `awaiting_clarification`. Probablemente
    distintas: una aclaracion admite mas espera que una interrupcion tecnica.
 3. **Tolerancia de redondeo** en la comprobacion de correspondencia entre el texto de
    la sintesis y los valores de los hechos.
 4. **Umbral que separa informar de confirmar** ante una nueva consulta costosa,
    expresado en filas examinadas.
 5. **Politica de reintento** ante indisponibilidad del modelo: cantidad y espera entre
-   intentos, antes de pasar a `recuperable`.
+   intentos, antes de pasar a `recoverable`.
 
 
 ---
@@ -641,7 +641,7 @@ conviene que existan desde el primer dia.
 | `progress_recorder` | Que persistir y cuando; delega en Sesion |
 | `minimal_answer` | Plantillas por tipo de hecho. En todos los turnos |
 | `output_validation` | Corte natural si la caja crece |
-| `attempt_tracker` | `intento_id`; descarta resultados superados |
+| `attempt_tracker` | `attempt_id`; descarta resultados superados |
 
 Las firmas concretas se definen al implementar. Este documento fija **el contrato**, no
 la implementacion: cualquier firma que lo respete es valida.

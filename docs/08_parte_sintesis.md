@@ -47,9 +47,9 @@ datos dijeron.
 
 | Entrada | Contenido |
 |---|---|
-| Hechos | Identificador, `objetivo_id`, tipo, valor, unidad, alcance, referencia a la invocacion que lo produjo |
+| Hechos | Identificador, `objective_id`, tipo, valor, unidad, alcance, referencia a la invocacion que lo produjo |
 | Alcance del turno | Periodo, filtros, definiciones aplicadas, alcance de universo, momento de captura, version semantica |
-| Naturaleza de la evidencia | Original o reconstruida |
+| Naturaleza de la evidencia | Original o reconstructed |
 | Estado de cada objetivo | Satisfecho, insuficiente, rechazado o no ejecutado |
 | Premisas declaradas | Y si los hechos las confirman o las contradicen |
 | Pregunta del usuario | Texto original, para que la respuesta sea pertinente |
@@ -73,7 +73,7 @@ La salida no es texto: es una estructura cuyos campos contienen texto.
 | Campo | Contenido |
 |---|---|
 | Secciones | Una por objetivo, en el orden en que fueron planteados |
-| Afirmaciones | Identificador, `objetivo_id`, tipo, texto, evidencia referenciada |
+| Afirmaciones | Identificador, `objective_id`, tipo, texto, evidencia referenciada |
 | Conclusion transversal | Opcional y condicionada (seccion 5) |
 | Alcance | Declaracion obligatoria (seccion 6) |
 | Sugerencias de investigacion | Preguntas nuevas que el sistema si puede responder, nunca ejecutadas solas |
@@ -81,29 +81,29 @@ La salida no es texto: es una estructura cuyos campos contienen texto.
 ### Ejemplo
 
 ```
-seccion objetivo_1 (explicar_variacion)
+section objective_1 (explain_variance)
 
-  a1  tipo: dato
-      texto: "La facturacion neta de julio fue 4.176.900 ARS frente a
-              4.812.400 ARS en junio, una caida de 635.500 ARS (-13,2 %)."
-      evidencia: [h1, h2, h3, h4]
+  a1  type: data
+      text: "La facturacion neta de julio fue 4.176.900 ARS frente a
+             4.812.400 ARS en junio, una caida de 635.500 ARS (-13,2 %)."
+      evidence: [h1, h2, h3, h4]
 
-  a2  tipo: interpretacion
-      texto: "La caida esta concentrada: tres clientes explican el 72 % de la
-              variacion total."
-      evidencia: [h5, h6, h7, h8]
+  a2  type: interpretation
+      text: "La caida esta concentrada: tres clientes explican el 72 % de la
+             variacion total."
+      evidence: [h5, h6, h7, h8]
 
-  a3  tipo: hipotesis
-      texto: "Una concentracion asi suele responder a un cambio puntual en pocas
-              cuentas antes que a una tendencia general."
-      evidencia: []
+  a3  type: hypothesis
+      text: "Una concentracion asi suele responder a un cambio puntual en pocas
+             cuentas antes que a una tendencia general."
+      evidence: []
 
-alcance:
-  periodo:      junio y julio de 2026
-  definicion:   facturacion = ventas menos notas de credito
-  universo:     todos los clientes
-  datos:        capturados el 15/08/2026 a las 14:32
-  evidencia:    original
+scope:
+  period:      junio y julio de 2026
+  definition:  facturacion = ventas menos notas de credito
+  universe:    todos los clientes
+  data:        capturados el 15/08/2026 a las 14:32
+  evidence:    original
 ```
 
 ---
@@ -158,7 +158,7 @@ Este es el punto de mayor riesgo de la parte.
 
 ### Secciones independientes
 
-> **Cada seccion usa unicamente hechos de su propio `objetivo_id`.**
+> **Cada seccion usa unicamente hechos de su propio `objective_id`.**
 
 Es una comprobacion mecanica y no admite excepcion. Un dato de la seccion del ranking
 no puede citar un hecho de la comparacion de periodos.
@@ -176,7 +176,7 @@ existe evidencia de la relacion, solo coincidencia de vocabulario.
 
 | Situacion | Conclusion transversal |
 |---|---|
-| Existe **dependencia declarada** entre los objetivos | Permitida como `interpretacion`, citando hechos de ambos |
+| Existe **dependencia declarada** entre los objetivos | Permitida como `interpretation`, citando hechos de ambos |
 | Objetivos independientes | **Prohibida.** Se ofrece continuacion sugerida |
 
 ### Sugerencia de investigacion
@@ -195,7 +195,7 @@ sugerencias de investigacion:
      primeros del ranking anual?"
 ```
 
-Se distingue de una `hipotesis`: la hipotesis vive **dentro** de una seccion y comenta
+Se distingue de una `hypothesis`: la hipotesis vive **dentro** de una seccion y comenta
 los hechos de ese objetivo; la sugerencia vive **fuera** de las secciones y no afirma
 nada, solo propone.
 
@@ -231,7 +231,7 @@ completo: interpretacion, validaciones, plan, criterio propio.
 
 Un turno puede tener un objetivo satisfecho y otro rechazado. Cada seccion declara su
 propio estado. El fallo de uno no contamina la respuesta del otro, salvo dependencia
-declarada, en cuyo caso el dependiente se reporta como `no_ejecutado` con la causa.
+declarada, en cuyo caso el dependiente se reporta como `not_executed` con la causa.
 
 ---
 
@@ -247,7 +247,7 @@ Obligatoria en toda respuesta. Sin ella, una cifra correcta puede ser enganosa.
 | Alcance de universo | Siempre que el contexto sea restringido |
 | Momento de captura de los datos | Siempre. **Rango** —el mas antiguo y el mas reciente— cuando los hechos difieren entre si |
 | Momento de la respuesta | Cuando difiere del anterior |
-| Naturaleza de la evidencia | Cuando es reconstruida |
+| Naturaleza de la evidencia | Cuando es reconstructed |
 | Origen del analisis | Cuando es `reanudado` o `rehecho`, con la causa |
 | Insuficiencia | Cuando algun objetivo no alcanzo su criterio |
 | Version semantica | En analisis guardados y exportaciones |
@@ -312,7 +312,7 @@ respuesta que declara hasta donde se llego.
               factores identificados cubren el 28 % de la variacion."
       evidencia: [h3, h4]
 
-  estado: insuficiente para explicar_variacion (umbral: 70 %)
+  estado: insuficiente para explain_variance (umbral: 70 %)
 ```
 
 Prohibido presentar un resultado insuficiente como si fuera una explicacion completa.
@@ -393,8 +393,8 @@ Reglas de forma, subordinadas a las de integridad:
 | Alcance omitido | Cifra correcta presentada como si fuera del total | Declaracion de alcance obligatoria |
 | Insuficiencia disimulada | Prosa afirmativa sobre evidencia parcial | Estado por seccion obligatorio |
 | Calificador sin respaldo | "Caida fuerte" sin umbral declarado | Calificadores clasificados como interpretacion |
-| Mezcla entre objetivos | Un dato cita hechos de dos objetivos | Comprobacion mecanica por `objetivo_id` |
-| Mezcla entre turnos | Un turno rehecho cita evidencia del turno fallido | Comprobacion mecanica por `turno_id`. Ademas de trazabilidad, es fuga de permisos |
+| Mezcla entre objetivos | Un dato cita hechos de dos objetivos | Comprobacion mecanica por `objective_id` |
+| Mezcla entre turnos | Un turno rehecho cita evidencia del turno fallido | Comprobacion mecanica por `turn_id`. Ademas de trazabilidad, es fuga de permisos |
 | Fecha unica enganosa | Hechos de momentos distintos bajo una sola marca | Rango de captura en el alcance |
 
 ---
@@ -407,11 +407,11 @@ Con un doble que devuelve salidas fijas:
 
 | Que verifica |
 |---|
-| Una afirmacion `dato` sin evidencia se rechaza |
+| Una afirmacion `data` sin evidencia se rechaza |
 | Una cifra ausente de los hechos se detecta |
 | Una referencia a un hecho inexistente se detecta |
-| Un `dato` que cita hechos de dos objetivos se rechaza |
-| Un `dato` que cita un hecho de otro turno se rechaza |
+| Un `data` que cita hechos de dos objetivos se rechaza |
+| Un `data` que cita un hecho de otro turno se rechaza |
 | Con hechos de momentos distintos, el alcance declara el rango |
 | Un analisis rehecho declara su origen y su causa |
 | Una conclusion transversal sin dependencia declarada se rechaza |
@@ -504,7 +504,7 @@ mencionarlo.
 ## 14. Aislamiento con una sola llamada
 
 **Decision:** Sintesis usa **una llamada por turno**, con salida estructurada y
-aislamiento determinista por `objetivo_id`.
+aislamiento determinista por `objective_id`.
 
 El aislamiento no requiere llamadas separadas: se consigue con contrato mas
 validacion. El material entregado declara, por seccion, que hechos puede referenciar:
@@ -515,7 +515,7 @@ seccion obj_2   hechos permitidos: h4, h5, h6
 sugerencias     (sin permiso de afirmar)
 ```
 
-Y la validacion impone mecanicamente `afirmacion.objetivo_id == hecho.objetivo_id`,
+Y la validacion impone mecanicamente `assertion.objective_id == fact.objective_id`,
 salvo dependencia declarada entre objetivos.
 
 Ventajas frente a una llamada por seccion: menor coste, menor latencia, texto
