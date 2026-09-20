@@ -17,6 +17,11 @@ htmlcov/
 exports/
 *.log
 
+# Estado local/operativo derivado de artefactos semanticos: el contenido
+# versionado sigue siendo la fuente para calcular semantic_version, esto
+# solo marca que version quedo publicada en esta ejecucion/entorno.
+semantic/*/.published_version
+
 # Editores
 .idea/
 .vscode/

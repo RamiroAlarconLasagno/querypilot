@@ -9,6 +9,7 @@ integridad se comprueba en artifact_validator.py.
 
 from __future__ import annotations
 
+import hashlib
 from decimal import Decimal
 from enum import StrEnum
 from pathlib import Path
@@ -155,3 +156,16 @@ def load_semantic_artifact(directory: Path) -> SemanticArtifact:
         dimensions=dimensions_file.dimensions,
         metrics=metrics_file.metrics,
     )
+
+
+def derive_semantic_version(artifact: SemanticArtifact) -> str:
+    """Version derivada del contenido, nunca escrita a mano (13 seccion 7).
+
+    Hash del contenido serializado: mismo artefacto, misma version; un
+    cambio de una sola sinonimo cambia la version. model_dump_json() usa el
+    orden de declaracion de los campos del modelo, que es estable entre
+    corridas para un mismo shape de modelo.
+    """
+    content = artifact.model_dump_json().encode("utf-8")
+    digest = hashlib.sha256(content).hexdigest()
+    return f"sem_v{digest[:12]}"

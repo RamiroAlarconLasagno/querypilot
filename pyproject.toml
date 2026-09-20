@@ -59,6 +59,15 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "PLR2004"]   # assert y numeros magicos son normales en tests
 
+[tool.ruff.lint.flake8-bugbear]
+# Patron documentado de Typer/FastAPI: la llamada en el default es cuando se
+# declara el parametro de CLI/endpoint, no logica que se ejecute en cada
+# invocacion. B008 no lo sabe distinguir sin esta lista.
+extend-immutable-calls = [
+    "typer.Argument", "typer.Option",
+    "fastapi.Depends", "fastapi.Query", "fastapi.Path", "fastapi.Body",
+]
+
 [tool.ruff.format]
 docstring-code-format = true
 
