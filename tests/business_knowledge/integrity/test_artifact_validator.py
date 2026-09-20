@@ -48,7 +48,7 @@ def _thresholds(**overrides: object) -> Thresholds:
         "materialization_rows": 50000,
         "active_datasets_per_session": 5,
         "active_datasets_mb": 50,
-        "max_dimension_cardinality": 5000,
+        "decompose_variance_max_dimension_cardinality": 5000,
         "min_explanation_coverage": Decimal("0.70"),
         "closed_period_freshness_hours": 24,
         "open_period_freshness_minutes": 15,

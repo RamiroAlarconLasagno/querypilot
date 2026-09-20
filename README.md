@@ -36,14 +36,23 @@ sin tener que comprobarlas a mano**.
 
 ## Estado
 
-En desarrollo. El diseno esta cerrado; la implementacion arranca por el primer MVP.
+En desarrollo. El primer MVP se implementa de forma incremental, cerrando cada bloque con
+contratos, tests y verificacion estatica antes de avanzar al siguiente.
+
+**Completado hasta ahora:**
+
+- lenguaje canonico e identificadores base;
+- carga tipada del artefacto semantico;
+- validador de integridad del artefacto;
+- version semantica derivada del contenido;
+- comandos `validate` y `publish` para el artefacto semantico.
 
 **Peldano actual:** 5.1 — probar el supuesto mas riesgoso del proyecto.
 
 > ¿Puede un modelo convertir preguntas reales de negocio en propuestas estructuradas
 > validas, con una capa semantica bien definida?
 
-Se mide con un banco de 60 preguntas congelado. Umbral duro: **error silencioso <= 5 %**.
+Se medira con un banco de 60 preguntas congelado. Umbral duro: **error silencioso <= 5 %**.
 Un sistema que pregunta es usable; uno que se equivoca con confianza no lo es, por alta
 que sea su exactitud promedio.
 
@@ -51,27 +60,50 @@ Ver `MAPA_AVANCE.md`.
 
 ---
 
+## Desarrollo asistido por IA
+
+QueryPilot tambien funciona como ejercicio de **AI-assisted software engineering**.
+
+El desarrollo utiliza **Claude Code y agentes de IA** como herramientas de implementacion,
+analisis y revision. La arquitectura, los contratos, los invariantes y los criterios de
+aceptacion se mantienen explicitamente en `docs/` y guian el trabajo de los agentes.
+
+El flujo de trabajo es incremental:
+
+1. Se define el alcance del bloque y sus contratos.
+2. El agente propone la implementacion y señala decisiones no resueltas.
+3. Las decisiones arquitectonicas se revisan antes de modificar codigo.
+4. Cada bloque se valida con tests, `ruff` y `mypy`.
+5. Solo despues de cerrar la unidad se realiza el commit.
+
+La IA no es la fuente de verdad del proyecto: **los contratos, los tests y la documentacion
+versionada determinan que comportamiento es valido**.
+
+---
+
 ## Arranque rapido
 
-Requiere Docker y [uv](https://docs.astral.sh/uv/).
+En el estado actual del MVP se puede validar y publicar el artefacto semantico sin levantar
+la infraestructura completa.
+
+Requiere Python 3.13 y [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone <repo> && cd querypilot
-cp .env.example .env          # completar credenciales
-docker compose up -d --build  # levanta app + postgres
-```
+git clone <repo>
+cd querypilot
 
-Desarrollo local:
-
-```bash
 uv sync
-uv run querypilot-seed schema-only     # esquema de la base de demostracion
+
 uv run querypilot-semantic validate demo
+uv run querypilot-semantic publish demo
+
+uv run ruff check .
+uv run mypy src
 uv run pytest
-uv run uvicorn querypilot.service_boundary.app:app --reload
 ```
 
-Atajos en el `Makefile`: `make install`, `make check`, `make test`, `make up`.
+Docker, PostgreSQL y la API completa se incorporan progresivamente en los siguientes
+bloques del plan de implementacion.
 
 ---
 
@@ -105,7 +137,7 @@ Diagrama completo en `docs/01_metodo_solucion.md`.
 |---|---|
 | Otro motor SQL | Una pieza de dialecto |
 | Otro proveedor de modelo | El puerto del modelo |
-| **Otra empresa, otra base de negocio** | **Nada. Solo el artefacto semantico** |
+| **Mismo motor, otra empresa o base de negocio** | **Solo el artefacto semantico** |
 | Otro cliente, o un cliente de terceros | Nada |
 
 Ninguna extension prevista toca el Ejecutor.
@@ -114,12 +146,13 @@ Ninguna extension prevista toca el Ejecutor.
 
 ## Stack
 
-Python 3.13 · FastAPI · Pydantic v2 · SQLAlchemy 2 · Alembic · PostgreSQL 17 ·
-uv · ruff · mypy · pytest · Docker · GitHub Actions
+**En uso actualmente:** Python 3.13 · Pydantic v2 · Typer · uv · ruff · mypy · pytest
 
-Un solo motor, dos conexiones con permisos distintos: la de negocio usa un usuario de
-**solo lectura verificada al conectar**, que es lo que impide escribir por accidente en
-la base del cliente.
+**Arquitectura prevista:** FastAPI · SQLAlchemy 2 · Alembic · PostgreSQL 17 · Docker ·
+GitHub Actions
+
+En la arquitectura final, la base de negocio usa una conexion de **solo lectura verificada
+al conectar**, que es lo que impide escribir por accidente en la base del cliente.
 
 ---
 
@@ -127,23 +160,38 @@ la base del cliente.
 
 Dos flujos con fronteras nitidas:
 
-| | CI, en cada PR | Evaluacion, manual |
+| | CI / verificacion determinista | Evaluacion con modelo |
 |---|---|---|
 | Prueba | Que el sistema es **correcto** | Que el modelo es **bueno** |
 | Determinismo | Total | Ninguno |
 | Coste | Cero | Por inferencia |
 | Secretos | **Ninguno** | Clave del proveedor |
 
-> **El CI no tiene acceso a ninguna clave de modelo.** Si un test la necesita, esta mal
-> categorizado. Hay una prueba estructural que lo verifica.
+> **Los tests deterministas no dependen de ninguna clave de modelo.** Si una prueba la
+> necesita, esta mal categorizada.
 
+### Verificacion actual
+
+```text
+uv sync -> ruff -> mypy -> pytest -> validar artefacto semantico
 ```
+
+### Flujo objetivo del sistema completo
+
+```text
 uv sync -> ruff -> mypy -> pytest con PostgreSQL real -> validar artefacto semantico
 ```
+
+La evaluacion con modelo real se ejecuta por separado y de forma manual cuando cambian el
+prompt, el modelo o el artefacto semantico.
 
 ---
 
 ## Documentacion
+
+La documentacion forma parte del artefacto tecnico del proyecto y se versiona junto al
+codigo. Las decisiones de arquitectura y los contratos son la referencia que deben cumplir
+la implementacion y los agentes de desarrollo.
 
 | Documento | Contenido |
 |---|---|

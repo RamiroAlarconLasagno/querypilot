@@ -52,7 +52,7 @@ class Thresholds(BaseModel):
     materialization_rows: int
     active_datasets_per_session: int
     active_datasets_mb: int
-    max_dimension_cardinality: int
+    decompose_variance_max_dimension_cardinality: int
     min_explanation_coverage: Decimal
     closed_period_freshness_hours: int
     open_period_freshness_minutes: int
