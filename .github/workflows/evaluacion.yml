@@ -1,0 +1,36 @@
+# .github/workflows/evaluacion.yml
+name: Evaluacion con modelo real
+
+# Disparo MANUAL unicamente. Consume el modelo, cuesta dinero y no es
+# determinista: por eso vive fuera del CI y no bloquea merges.
+# Se dispara cuando cambian prompts, modelo o artefacto semantico.
+on:
+  workflow_dispatch:
+    inputs:
+      conexion:
+        description: Conexion semantica a evaluar
+        default: demo
+      version_prompt:
+        description: Version de prompt a usar
+        required: true
+
+jobs:
+  evaluar:
+    runs-on: ubuntu-latest
+    environment: evaluacion
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      QP_MODEL_PROVIDER: openai
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - name: Banco de evaluacion
+        run: >-
+          uv run querypilot-eval run ${{ inputs.conexion }}
+          --prompt-version ${{ inputs.version_prompt }}
+          --report reporte.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reporte-evaluacion
+          path: reporte.md

@@ -1,0 +1,72 @@
+# semantic/demo/metrics.yaml
+# Definicion de negocio y receta fisica JUNTAS, en el mismo bloque.
+# Separarlas invitaria a que divergieran.
+
+metricas:
+  - canonico: facturacion_neta
+    nombre_negocio: Facturacion
+    definicion: Ventas menos notas de credito, sin impuestos.
+    sinonimos: [ventas, ingresos, facturado, facturacion]
+    acepcion_por_defecto_de: [ventas, ingresos]
+    unidad: ARS
+    agregaciones: [suma]
+    dimensiones_combinables: [cliente, region, producto, vendedor, categoria]
+    granularidad_minima: dia
+    fisico:
+      fuente: cmp_cab
+      medida: suma(cmp_det.imp_neto)
+      relaciones:
+        - de: cmp_cab
+          a: cmp_det
+          por: cmp_cab.nro_int = cmp_det.nro_int
+      campo_temporal: cmp_cab.f_emis
+      exclusiones:
+        - cmp_cab.est_cod <> 9   # 9 = anulado
+
+  - canonico: unidades_vendidas
+    nombre_negocio: Unidades vendidas
+    definicion: Cantidad de unidades facturadas, neta de devoluciones.
+    sinonimos: [unidades, cantidad, volumen]
+    unidad: unidades
+    agregaciones: [suma]
+    dimensiones_combinables: [cliente, region, producto, vendedor, categoria]
+    granularidad_minima: dia
+    fisico:
+      fuente: cmp_cab
+      medida: suma(cmp_det.cant)
+      relaciones:
+        - de: cmp_cab
+          a: cmp_det
+          por: cmp_cab.nro_int = cmp_det.nro_int
+      campo_temporal: cmp_cab.f_emis
+      exclusiones:
+        - cmp_cab.est_cod <> 9
+
+  - canonico: operaciones
+    nombre_negocio: Operaciones
+    definicion: Cantidad de comprobantes de venta emitidos.
+    sinonimos: [comprobantes, facturas, transacciones]
+    unidad: operaciones
+    agregaciones: [conteo]
+    dimensiones_combinables: [cliente, region, vendedor]
+    granularidad_minima: dia
+    fisico:
+      fuente: cmp_cab
+      medida: conteo_distinto(cmp_cab.nro_int)
+      campo_temporal: cmp_cab.f_emis
+      exclusiones:
+        - cmp_cab.est_cod <> 9
+
+  - canonico: costo_unitario
+    nombre_negocio: Costo unitario
+    definicion: Costo de reposicion del articulo al momento de la venta.
+    sinonimos: [costo]
+    unidad: ARS
+    agregaciones: [promedio]
+    dimensiones_combinables: [producto, categoria]
+    granularidad_minima: dia
+    sensible: true
+    fisico:
+      fuente: cmp_det
+      medida: promedio(cmp_det.cost_rep)
+      campo_temporal: cmp_cab.f_emis

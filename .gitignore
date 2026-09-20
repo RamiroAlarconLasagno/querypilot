@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Entorno y secretos
+.env
+*.pem
+
+# Salidas
+exports/
+*.log
+
+# Editores
+.idea/
+.vscode/
+.DS_Store

@@ -1,0 +1,36 @@
+# semantic/demo/connection.yaml
+# Identidad de la conexion, calendario del negocio y umbrales.
+# El artefacto es la fuente de verdad; la version se deriva del contenido.
+
+conexion: demo
+descripcion: Distribuidora mayorista de demostracion. Esquema deliberadamente incomodo.
+motor: postgresql
+
+calendario:
+  tipo: civil          # civil | fiscal
+  mes_cierre: 12
+  inicio_semana: lunes
+
+umbrales:
+  # Relacion obligatoria: contexto < vista_previa < materializacion
+  contexto_filas: 20
+  vista_previa_filas: 100
+  vista_previa_columnas: 20
+  materializacion_filas: 50000
+  conjuntos_activos_por_sesion: 5
+  conjuntos_activos_mb: 50
+  cardinalidad_maxima_dimension: 5000
+  cobertura_minima_explicacion: 0.70
+  frescura_periodo_cerrado_horas: 24
+  frescura_periodo_abierto_minutos: 15
+  limite_tiempo_consulta_segundos: 30
+  presupuesto_turno_segundos: 90
+  presupuesto_llamadas_modelo: 5
+  filas_examinadas_para_confirmar: 1000000
+
+sensibilidad:
+  # Conceptos sensibles y bajo que condicion. Alimenta a Contexto de acceso.
+  - concepto: costo_unitario
+    condicion: rol != administrador
+  - concepto: margen
+    condicion: rol != administrador

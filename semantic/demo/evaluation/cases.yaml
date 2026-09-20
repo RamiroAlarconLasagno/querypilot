@@ -1,0 +1,107 @@
+# semantic/demo/evaluation/cases.yaml
+# Banco de casos: pregunta -> interpretacion esperada.
+# NO declara respuestas en cifras: eso depende de los datos.
+# La interpretacion esperada depende solo de la capa semantica.
+#
+# Minimo del experimento: 60 casos.
+# Composicion: 40% directas, 15% ambiguedad material, 15% continuaciones,
+# 10% con premisa, 10% multiples objetivos, 10% fuera de alcance.
+# CONGELAR antes de la primera corrida. No modificar segun resultados.
+
+casos:
+  - id: c001
+    categoria: directa
+    pregunta: "¿Cuanto facturamos en julio?"
+    esperado:
+      objetivos:
+        - objetivo: consultar_metrica
+          metrica: facturacion_neta
+          temporal: "julio"
+
+  - id: c002
+    categoria: directa
+    pregunta: "Compara la facturacion de julio contra junio"
+    esperado:
+      objetivos:
+        - objetivo: comparar
+          metrica: facturacion_neta
+          temporal: ["julio", "junio"]
+
+  - id: c003
+    categoria: premisa
+    pregunta: "¿Por que cayo la facturacion en julio?"
+    esperado:
+      objetivos:
+        - objetivo: explicar_variacion
+          metrica: facturacion_neta
+          temporal: ["julio", "junio"]
+          premisas: ["existe una caida entre ambos periodos"]
+
+  - id: c004
+    categoria: ambiguedad_material
+    pregunta: "Mostrame los mejores clientes de este trimestre"
+    esperado:
+      ambiguedad: criterio de "mejores"
+      opciones: [facturacion_neta, unidades_vendidas, operaciones]
+      plan: no_se_propone
+
+  - id: c005
+    categoria: directa
+    pregunta: "Ventas por region en el ano"
+    esperado:
+      objetivos:
+        - objetivo: desglosar
+          metrica: facturacion_neta      # acepcion por defecto de "ventas"
+          dimension: region
+          temporal: "el ano"
+
+  - id: c006
+    categoria: multiples_objetivos
+    pregunta: "Compara julio contra junio y decime tambien el ranking anual de clientes"
+    esperado:
+      objetivos:
+        - objetivo: comparar
+          metrica: facturacion_neta
+          temporal: ["julio", "junio"]
+        - objetivo: rankear
+          metrica: facturacion_neta
+          dimension: cliente
+          temporal: "el ano"
+          dependencia: null            # NO hereda "julio" del primero
+
+  - id: c007
+    categoria: continuacion
+    pregunta: "Saca esos tres y compara de nuevo"
+    contexto_previo: descomposicion por cliente con tres contribuyentes principales
+    esperado:
+      continuidad: continuacion
+      hereda: [metrica, periodos, dimension]
+      filtros: ["cliente distinto de los tres identificados"]
+
+  - id: c008
+    categoria: fuera_de_alcance
+    pregunta: "¿Nos conviene abrir una sucursal en Cordoba?"
+    esperado:
+      fuera_de_alcance: requiere proyeccion y criterio de negocio
+      alternativas_ofrecidas: [facturacion por region, evolucion mensual, ranking por region]
+
+  - id: c009
+    categoria: fuera_de_alcance
+    pregunta: "¿Cual fue el margen por producto?"
+    esperado:
+      # Bajo contexto restringido el concepto no esta en el catalogo entregado:
+      # se informa como limitacion de alcance SIN nombrar el concepto.
+      rechazo: concepto_no_disponible_en_contexto
+      no_debe_nombrar: [margen, costo_unitario]
+
+  - id: c010
+    categoria: directa
+    pregunta: "¿Cuantas operaciones hicimos la semana pasada?"
+    esperado:
+      objetivos:
+        - objetivo: consultar_metrica
+          metrica: operaciones
+          temporal: "la semana pasada"
+
+  # --- Faltan 50 casos. Se escriben ANTES de terminar el artefacto semantico,
+  # --- recolectados de mas de una persona, y se congelan.

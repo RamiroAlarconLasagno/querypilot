@@ -1,0 +1,56 @@
+# semantic/demo/dimensions.yaml
+
+dimensiones:
+  - canonico: cliente
+    nombre_negocio: Cliente
+    sinonimos: [clientes, cuenta, cuentas]
+    cardinalidad_esperada: 1240
+    fisico:
+      fuente: ent_com
+      atributo: ent_com.raz_soc
+      clave: ent_com.ent_id
+      relacion: cmp_cab.ent_id = ent_com.ent_id
+      # ent_com mezcla clientes y proveedores: tp = 1 es cliente
+      filtro_permanente: ent_com.tp = 1
+
+  - canonico: region
+    nombre_negocio: Region
+    sinonimos: [zona, zonas, regiones]
+    cardinalidad_esperada: 6
+    jerarquia: [region, provincia]
+    fisico:
+      fuente: geo_ref
+      atributo: geo_ref.desc_1
+      clave: geo_ref.geo_id
+      relacion: ent_com.geo_id = geo_ref.geo_id
+
+  - canonico: producto
+    nombre_negocio: Producto
+    sinonimos: [productos, articulo, articulos, sku]
+    cardinalidad_esperada: 3800
+    fisico:
+      fuente: art_mae
+      atributo: art_mae.desc_larga
+      clave: art_mae.art_cod
+      relacion: cmp_det.art_cod = art_mae.art_cod
+
+  - canonico: categoria
+    nombre_negocio: Categoria
+    sinonimos: [rubro, familia, categorias]
+    cardinalidad_esperada: 24
+    jerarquia: [categoria, producto]
+    fisico:
+      fuente: art_rub
+      atributo: art_rub.rub_desc
+      clave: art_rub.rub_cod
+      relacion: art_mae.rub_cod = art_rub.rub_cod
+
+  - canonico: vendedor
+    nombre_negocio: Vendedor
+    sinonimos: [vendedores, comercial, representante]
+    cardinalidad_esperada: 14
+    fisico:
+      fuente: usr_int
+      atributo: usr_int.nom_ape
+      clave: usr_int.usr_id
+      relacion: cmp_cab.usr_id = usr_int.usr_id

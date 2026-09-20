@@ -1,0 +1,29 @@
+# .github/workflows/pr_check.yml
+name: Convenciones de PR
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  convenciones:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Nombre de rama
+        run: |
+          RAMA="${{ github.head_ref }}"
+          echo "Rama: $RAMA"
+          if ! echo "$RAMA" | grep -Eq '^(feat|fix|refactor|test|docs|chore)/[a-z0-9._-]+$'; then
+            echo "::error::El nombre de rama debe ser <tipo>/<descripcion>."
+            echo "Tipos: feat, fix, refactor, test, docs, chore"
+            exit 1
+          fi
+      - name: Titulo del PR
+        run: |
+          TITULO="${{ github.event.pull_request.title }}"
+          echo "Titulo: $TITULO"
+          if ! echo "$TITULO" | grep -Eq '^(feat|fix|refactor|test|docs|chore|perf)(\([a-z0-9_-]+\))?: .+'; then
+            echo "::error::El titulo debe seguir Conventional Commits."
+            echo "Ejemplo: feat(analytics): agregar operacion desglosar"
+            exit 1
+          fi

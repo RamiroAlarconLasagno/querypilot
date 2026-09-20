@@ -1,0 +1,64 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# El CI es puerta de merge: codigo, contratos y artefacto semantico
+# deben ser validos antes de integrar.
+#
+# PROPIEDAD DECLARADA: este flujo NO tiene ninguna clave de proveedor de modelo.
+# Cero red externa, cero coste por inferencia, cero secretos de LLM.
+# Si un test necesita una clave real, esta mal categorizado: pertenece al
+# flujo de evaluacion manual, no aqui.
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check src tests
+      - name: Formato
+        run: uv run ruff format --check src tests
+      - name: Tipos
+        run: uv run mypy src
+
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Misma version que en compose.yaml: probar contra otro motor
+        # invalidaria las pruebas de dialecto.
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: querypilot
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: querypilot
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U querypilot"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      QP_SYSTEM_DB_URL: postgresql+psycopg://querypilot:ci@localhost:5432/querypilot
+      QP_BUSINESS_DB_URL: postgresql+psycopg://querypilot:ci@localhost:5432/querypilot
+      QP_API_KEY: clave-de-ci
+      # Deliberadamente vacias: la suite de contrato debe pasar sin ellas.
+      OPENAI_API_KEY: ""
+      QP_MODEL_PROVIDER: doble
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Tests deterministas
+        run: uv run pytest -m "not evaluation" --cov --cov-report=term-missing
+      - name: Validar artefacto semantico de ejemplo
+        run: uv run querypilot-semantic validate demo
