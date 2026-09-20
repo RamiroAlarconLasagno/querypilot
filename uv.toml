@@ -1,0 +1,5 @@
+# uv.toml
+# Usa los certificados TLS del sistema operativo en vez de los de uv.
+# Sin esto, "uv sync" falla en redes que interceptan TLS (proxy corporativo,
+# antivirus) con "invalid peer certificate: UnknownIssuer" contra pypi.org.
+system-certs = true
