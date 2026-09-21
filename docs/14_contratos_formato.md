@@ -166,8 +166,12 @@ AnalysisPlan
 PlannedObjective
   objective_id, objective: ObjectiveName
   sufficiency:  Condition
-  depends_on:   str | None         dependencia declarada entre objetivos
+  dependency:   PlannedObjectiveDependency | None
   steps:        list[PlanStep]
+
+PlannedObjectiveDependency
+  source_objective_id:  str        objective_id durable, nunca un proposal_id efimero
+  binding:               Binding    ver seccion 8 -- se conserva sin modificar
 
 PlanStep
   step_id, operation: OperationName
@@ -194,6 +198,23 @@ conocimiento del dominio volveria al Ejecutor por la puerta de atras.
 `derives_from` es la novedad del nivel de formato: hace **explicita en el dato** la
 dependencia entre pasos que la coherencia de captura necesita comprobar. En el contrato
 semantico estaba descrita en prosa; aqui es un campo.
+
+### `PlannedObjectiveDependency` reemplaza a `depends_on: str | None`
+
+Un solo campo, nunca los dos: `depends_on` como identificador suelto y
+`PlannedObjectiveDependency` con la misma informacion habrian permitido que
+divergieran. `PlannedObjectiveDependency` no reutiliza `ObjectiveDependency`
+(seccion 8) tal cual: `ObjectiveDependency.source_proposal_id` es un identificador
+efimero de la salida cruda del modelo (`p1`, `p2`...), valido solo dentro de un
+`InterpretationOutput`. `PlannedObjectiveDependency.source_objective_id` es el
+identificador durable (`obj_1`, `obj_2`...) que sobrevive en `AnalysisPlan`. La
+transformacion hace `source_proposal_id -> source_objective_id` con la tabla local
+`proposal_id -> objective_id` que arma el bloque que construye el plan, y conserva
+`binding` sin modificarlo -- extraer un valor de filtro a partir de un `Fact` real
+sigue sin resolverse (ver el hueco de `Fact.value` en la seccion 8) y no es
+responsabilidad de esta transformacion: `PlannedObjectiveDependency` solo transporta
+el `binding` hasta donde exista un hecho real con el que aplicarlo, que es
+responsabilidad de quien ejecuta el plan, no de quien lo construye.
 
 ---
 
