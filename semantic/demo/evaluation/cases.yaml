@@ -3,106 +3,657 @@
 # NO declara respuestas en cifras: eso depende de los datos.
 # La interpretacion esperada depende solo de la capa semantica.
 #
-# Minimo del experimento: 60 casos.
-# Composicion: 40% directas, 15% ambiguedad material, 15% continuaciones,
-# 10% con premisa, 10% multiples objetivos, 10% fuera de alcance.
-# CONGELAR antes de la primera corrida. No modificar segun resultados.
+# 60 casos. Composicion (01_metodo_solucion.md seccion 12):
+#   40% direct (24) · 15% material_ambiguity (9) · 15% continuation (9)
+#   10% premise (6) · 10% multiple_objectives (6) · 10% out_of_scope (6)
+#
+# CONGELADO antes de la primera corrida real (bloque 1.8). No se modifica
+# segun resultados -- ver docs/16_instrucciones_ia.md y el commit que fija
+# esta version. Un cambio de vocabulario (metrics.yaml/dimensions.yaml)
+# obliga a re-correr el banco entero, no a editar los casos.
+#
+# Esquema de `expected` (business_knowledge/evaluation_cases.py):
+#   kind: plan         -> objectives: [...], inherits: [...] (solo continuation)
+#   kind: ambiguity     -> description, options
+#   kind: out_of_scope  -> reason, offered_alternatives, rejection_cause, must_not_name
+#
+# El comparador semantico solo verifica lo declarado aca: nunca proposal_id,
+# step_id ni ids durables.
 
 cases:
+  # ---------------------------------------------------------------- direct (24)
   - id: c001
     category: direct
     question: "¿Cuanto facturamos en julio?"
     expected:
+      kind: plan
       objectives:
         - objective: query_metric
           metric: net_revenue
-          temporal: "julio"
+          temporal: [julio]
 
   - id: c002
     category: direct
-    question: "Compara la facturacion de julio contra junio"
-    expected:
-      objectives:
-        - objective: compare
-          metric: net_revenue
-          temporal: ["julio", "junio"]
-
-  - id: c003
-    category: premise
-    question: "¿Por que cayo la facturacion en julio?"
-    expected:
-      objectives:
-        - objective: explain_variance
-          metric: net_revenue
-          temporal: ["julio", "junio"]
-          premises: ["existe una caida entre ambos periodos"]
-
-  - id: c004
-    category: material_ambiguity
-    question: "Mostrame los mejores clientes de este trimestre"
-    expected:
-      ambiguity: criterio de "mejores"
-      options: [net_revenue, units_sold, operations]
-      plan: not_proposed
-
-  - id: c005
-    category: direct
-    question: "Ventas por region en el ano"
-    expected:
-      objectives:
-        - objective: breakdown
-          metric: net_revenue # acepcion por defecto de "ventas"
-          dimension: region
-          temporal: "el ano"
-
-  - id: c006
-    category: multiple_objectives
-    question: "Compara julio contra junio y decime tambien el ranking anual de clientes"
-    expected:
-      objectives:
-        - objective: compare
-          metric: net_revenue
-          temporal: ["julio", "junio"]
-        - objective: rank
-          metric: net_revenue
-          dimension: customer
-          temporal: "el ano"
-          dependency: null # NO hereda "julio" del primero
-
-  - id: c007
-    category: continuation
-    question: "Saca esos tres y compara de nuevo"
-    previous_context: descomposicion por cliente con tres contribuyentes principales
-    expected:
-      continuity: continuation
-      inherits: [metric, periods, dimension]
-      filters: ["cliente distinto de los tres identificados"]
-
-  - id: c008
-    category: out_of_scope
-    question: "¿Nos conviene abrir una sucursal en Cordoba?"
-    expected:
-      out_of_scope: requiere proyeccion y criterio de negocio
-      offered_alternatives:
-        [facturacion por region, evolucion mensual, ranking por region]
-
-  - id: c009
-    category: out_of_scope
-    question: "¿Cual fue el margen por producto?"
-    expected:
-      # Bajo contexto restringido el concepto no esta en el catalogo entregado:
-      # se informa como limitacion de alcance SIN nombrar el concepto.
-      rejection: concept_not_available_in_context
-      must_not_name: [margin, unit_cost]
-
-  - id: c010
-    category: direct
     question: "¿Cuantas operaciones hicimos la semana pasada?"
     expected:
+      kind: plan
       objectives:
         - objective: query_metric
           metric: operations
-          temporal: "la semana pasada"
+          temporal: [la semana pasada]
 
-  # --- Faltan 50 casos. Se escriben ANTES de terminar el artefacto semantico,
-  # --- recolectados de mas de una persona, y se congelan.
+  - id: c003
+    category: direct
+    question: "¿Cuantas unidades vendimos en agosto?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: units_sold
+          temporal: [agosto]
+
+  - id: c004
+    category: direct
+    question: "Facturacion por region en el ano"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
+          dimension: region
+          temporal: [el ano]
+          operations: [breakdown]
+
+  - id: c005
+    category: direct
+    question: "Unidades vendidas por categoria este trimestre"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: units_sold
+          dimension: category
+          temporal: [este trimestre]
+          operations: [breakdown]
+
+  - id: c006
+    category: direct
+    question: "¿Cuanto facturo cada vendedor en julio?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
+          dimension: salesperson
+          temporal: [julio]
+          operations: [breakdown]
+
+  - id: c007
+    category: direct
+    question: "¿Cual fue la facturacion total del ano pasado?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
+          temporal: [el ano pasado]
+
+  - id: c008
+    category: direct
+    question: "¿Cuantas unidades vendimos la semana pasada?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: units_sold
+          temporal: [la semana pasada]
+
+  - id: c009
+    category: direct
+    question: "¿Cuantas operaciones se hicieron este mes?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: operations
+          temporal: [este mes]
+
+  - id: c010
+    category: direct
+    question: "¿Cuanto facturamos en el segundo trimestre?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
+          temporal: [el segundo trimestre]
+
+  - id: c011
+    category: direct
+    question: "Compara la facturacion de julio contra junio"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: net_revenue
+          temporal: [julio, junio]
+
+  - id: c012
+    category: direct
+    question: "Compara las unidades vendidas de este mes contra el mes pasado"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: units_sold
+          temporal: [este mes, el mes pasado]
+
+  - id: c013
+    category: direct
+    question: "Compara la facturacion de este trimestre contra el trimestre anterior"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: net_revenue
+          temporal: [este trimestre, el trimestre anterior]
+
+  - id: c014
+    category: direct
+    question: "Compara las operaciones de esta semana contra la semana pasada"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: operations
+          temporal: [esta semana, la semana pasada]
+
+  - id: c015
+    category: direct
+    question: "Compara la facturacion de este ano contra el ano pasado"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: net_revenue
+          temporal: [este ano, el ano pasado]
+
+  - id: c016
+    category: direct
+    question: "Compara las unidades vendidas de julio contra junio"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: units_sold
+          temporal: [julio, junio]
+
+  - id: c017
+    category: direct
+    question: "Dame los diez clientes que mas facturaron este trimestre"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: net_revenue
+          dimension: customer
+          temporal: [este trimestre]
+
+  - id: c018
+    category: direct
+    question: "¿Cuales son los diez productos mas vendidos el mes pasado?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: units_sold
+          dimension: product
+          temporal: [el mes pasado]
+
+  - id: c019
+    category: direct
+    question: "Dame el ranking de regiones por facturacion en el ano"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: net_revenue
+          dimension: region
+          temporal: [el ano]
+
+  - id: c020
+    category: direct
+    question: "¿Que vendedores facturaron mas este trimestre?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: net_revenue
+          dimension: salesperson
+          temporal: [este trimestre]
+
+  - id: c021
+    category: direct
+    question: "¿Hubo algo raro en la facturacion en las ultimas cuatro semanas?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: detect_anomaly
+          metric: net_revenue
+          temporal: [las ultimas cuatro semanas]
+
+  - id: c022
+    category: direct
+    question: "¿Hay algun dia con ventas fuera de lo normal este mes?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: detect_anomaly
+          metric: units_sold
+          temporal: [este mes]
+
+  - id: c023
+    category: direct
+    question: "¿Que clientes tenemos en la region Centro?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: describe_dataset
+
+  - id: c024
+    category: direct
+    question: "Dame un panorama de las operaciones registradas este mes"
+    expected:
+      kind: plan
+      objectives:
+        - objective: describe_dataset
+          temporal: [este mes]
+
+  # --------------------------------------------------------------- premise (6)
+  - id: c025
+    category: premise
+    question: "¿Por que cayo la facturacion en julio?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: explain_variance
+          metric: net_revenue
+          temporal: [julio, junio]
+          premises: ["existe una caida entre ambos periodos"]
+
+  - id: c026
+    category: premise
+    question: "¿Por que bajaron las unidades vendidas este trimestre?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: explain_variance
+          metric: units_sold
+          temporal: [este trimestre, el trimestre anterior]
+          premises: ["existe una baja entre ambos periodos"]
+
+  - id: c027
+    category: premise
+    question: "¿A que se debe la suba de facturacion en agosto?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: explain_variance
+          metric: net_revenue
+          temporal: [agosto, julio]
+          premises: ["existe una suba entre ambos periodos"]
+
+  - id: c028
+    category: premise
+    question: "¿Por que cayeron las operaciones la semana pasada?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: explain_variance
+          metric: operations
+          temporal: [la semana pasada, la semana anterior]
+          premises: ["existe una caida entre ambas semanas"]
+
+  - id: c029
+    category: premise
+    question: "¿Que explica la diferencia de facturacion entre este trimestre y el anterior?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: explain_variance
+          metric: net_revenue
+          temporal: [este trimestre, el trimestre anterior]
+          premises: ["existe una diferencia entre ambos periodos"]
+
+  - id: c030
+    category: premise
+    question: "Ya que la facturacion de la region Norte viene cayendo, ¿cuales son los clientes que mas bajaron?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: net_revenue
+          dimension: customer
+          temporal: [este trimestre]
+          premises: ["la facturacion de la region Norte viene cayendo"]
+
+  # ---------------------------------------------------------- continuation (9)
+  - id: c031
+    category: continuation
+    previous_context: "Descomposicion de la facturacion por cliente en julio vs junio, con tres contribuyentes principales identificados."
+    question: "Saca esos tres clientes y compara de nuevo"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: net_revenue
+          temporal: [julio, junio]
+      inherits: [metric, period]
+
+  - id: c032
+    category: continuation
+    previous_context: "Facturacion de julio para la region Centro."
+    question: "¿Y en junio?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
+          temporal: [junio]
+      inherits: [metric]
+
+  - id: c033
+    category: continuation
+    previous_context: "Ranking de los diez clientes que mas facturaron este trimestre."
+    question: "Ahora mostrame lo mismo pero por unidades vendidas"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: units_sold
+          dimension: customer
+          temporal: [este trimestre]
+      inherits: [dimension, period]
+
+  - id: c034
+    category: continuation
+    previous_context: "Comparacion de facturacion julio vs junio."
+    question: "Segui con la misma comparacion pero solo para la region Sur"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: net_revenue
+          temporal: [julio, junio]
+      inherits: [metric, period, filters]
+
+  - id: c035
+    category: continuation
+    previous_context: "Facturacion por vendedor en julio."
+    question: "¿Y en el mismo periodo pero por categoria de producto?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
+          dimension: category
+          temporal: [julio]
+          operations: [breakdown]
+      inherits: [metric, period]
+
+  - id: c036
+    category: continuation
+    previous_context: "Facturacion de agosto."
+    question: "Continua con setiembre"
+    expected:
+      kind: plan
+      objectives:
+        - objective: query_metric
+          metric: net_revenue
+          temporal: [setiembre]
+      inherits: [metric]
+
+  - id: c037
+    category: continuation
+    previous_context: "Deteccion de anomalias en la facturacion de las ultimas cuatro semanas."
+    question: "Hace lo mismo para las unidades vendidas"
+    expected:
+      kind: plan
+      objectives:
+        - objective: detect_anomaly
+          metric: units_sold
+          temporal: [las ultimas cuatro semanas]
+      inherits: [period]
+
+  - id: c038
+    category: continuation
+    previous_context: "Ranking de los diez productos mas vendidos este mes."
+    question: "Saca los tres primeros y mostrame el resto"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: units_sold
+          dimension: product
+          temporal: [este mes]
+      inherits: [metric, dimension, period, filters]
+
+  - id: c039
+    category: continuation
+    previous_context: "Comparacion de operaciones entre este mes y el mes anterior."
+    question: "¿Y para el vendedor Fernandez?"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: operations
+          temporal: [este mes, el mes anterior]
+      inherits: [metric, period, filters]
+
+  # ------------------------------------------------------ multiple_objectives (6)
+  - id: c040
+    category: multiple_objectives
+    question: "Compara julio contra junio y decime tambien el ranking anual de clientes"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: net_revenue
+          temporal: [julio, junio]
+        - objective: rank
+          metric: net_revenue
+          dimension: customer
+          temporal: [el ano]
+
+  - id: c041
+    category: multiple_objectives
+    question: "Compara julio contra junio, y aparte compara esos mismos meses pero excluyendo a los clientes que mas cayeron"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: net_revenue
+          temporal: [julio, junio]
+        - objective: compare
+          metric: net_revenue
+          temporal: [julio, junio]
+          depends_on_previous: true
+
+  - id: c042
+    category: multiple_objectives
+    question: "Dame el ranking de los diez productos mas vendidos este mes y compara la facturacion total de este mes contra el mes pasado"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: units_sold
+          dimension: product
+          temporal: [este mes]
+        - objective: compare
+          metric: net_revenue
+          temporal: [este mes, el mes pasado]
+
+  - id: c043
+    category: multiple_objectives
+    question: "Conta si hay algo raro en la facturacion de las ultimas semanas y compara con el mismo periodo del ano pasado"
+    expected:
+      kind: plan
+      objectives:
+        - objective: detect_anomaly
+          metric: net_revenue
+          temporal: [las ultimas cuatro semanas]
+        - objective: compare
+          metric: net_revenue
+          temporal: [las ultimas cuatro semanas, el mismo periodo del ano pasado]
+
+  - id: c044
+    category: multiple_objectives
+    question: "Quiero el ranking de vendedores por facturacion este trimestre y tambien un resumen general de las operaciones de este trimestre"
+    expected:
+      kind: plan
+      objectives:
+        - objective: rank
+          metric: net_revenue
+          dimension: salesperson
+          temporal: [este trimestre]
+        - objective: describe_dataset
+          temporal: [este trimestre]
+
+  - id: c045
+    category: multiple_objectives
+    question: "Compara las unidades vendidas de julio contra junio y decime por que cambio la facturacion en el mismo periodo"
+    expected:
+      kind: plan
+      objectives:
+        - objective: compare
+          metric: units_sold
+          temporal: [julio, junio]
+        - objective: explain_variance
+          metric: net_revenue
+          temporal: [julio, junio]
+          premises: ["existe un cambio entre ambos periodos"]
+
+  # ------------------------------------------------------- material_ambiguity (9)
+  - id: c046
+    category: material_ambiguity
+    question: "Mostrame los mejores clientes de este trimestre"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "mejores"'
+      options: [net_revenue, units_sold, operations]
+
+  - id: c047
+    category: material_ambiguity
+    question: "¿Cual fue el mejor mes del ano?"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "mejor"'
+      options: [net_revenue, units_sold, operations]
+
+  - id: c048
+    category: material_ambiguity
+    question: "¿Como viene el rendimiento de la region Centro?"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "rendimiento"'
+      options: [net_revenue, units_sold, operations]
+
+  - id: c049
+    category: material_ambiguity
+    question: "Decime cuales son los peores productos"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "peores"'
+      options: [net_revenue, units_sold]
+
+  - id: c050
+    category: material_ambiguity
+    question: "¿Quien es el vendedor mas flojo este trimestre?"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "mas flojo"'
+      options: [net_revenue, units_sold, operations]
+
+  - id: c051
+    category: material_ambiguity
+    question: "Mostrame el top de clientes de la region Sur"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "top"'
+      options: [net_revenue, units_sold, operations]
+
+  - id: c052
+    category: material_ambiguity
+    question: "¿Cual categoria tuvo mejor desempeno este ano?"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "desempeno"'
+      options: [net_revenue, units_sold]
+
+  - id: c053
+    category: material_ambiguity
+    question: "Quiero ver como estuvo el negocio este mes"
+    expected:
+      kind: ambiguity
+      description: 'metrica sin declarar para "como estuvo el negocio"'
+      options: [net_revenue, units_sold, operations]
+
+  - id: c054
+    category: material_ambiguity
+    question: "¿Cual fue el resultado de julio?"
+    expected:
+      kind: ambiguity
+      description: 'criterio de "resultado"'
+      options: [net_revenue, units_sold, operations]
+
+  # ------------------------------------------------------------ out_of_scope (6)
+  - id: c055
+    category: out_of_scope
+    question: "¿Nos conviene abrir una sucursal en Cordoba?"
+    expected:
+      kind: out_of_scope
+      reason: requiere proyeccion y criterio de negocio
+      offered_alternatives:
+        [facturacion por region, evolucion mensual, ranking por region]
+
+  - id: c056
+    category: out_of_scope
+    question: "¿Cual fue el margen por producto?"
+    expected:
+      kind: out_of_scope
+      reason: "margen no es un concepto del artefacto semantico de esta conexion"
+      rejection_cause: nonexistent_concept
+      must_not_name: [margin, unit_cost]
+
+  - id: c057
+    category: out_of_scope
+    question: "¿Que precio le pongo al producto nuevo?"
+    expected:
+      kind: out_of_scope
+      reason: requiere criterio comercial, no es un dato que el sistema calcule
+      offered_alternatives: [facturacion por producto, unidades vendidas por producto]
+
+  - id: c058
+    category: out_of_scope
+    question: "¿Por que se esta yendo un cliente importante?"
+    expected:
+      kind: out_of_scope
+      reason: requiere informacion cualitativa fuera de los datos de ventas
+      offered_alternatives:
+        [evolucion de facturacion del cliente, comparacion de compras entre periodos]
+
+  - id: c059
+    category: out_of_scope
+    question: "¿Cuanto vamos a vender el ano que viene?"
+    expected:
+      kind: out_of_scope
+      reason: requiere proyeccion; el sistema no calcula pronosticos
+      offered_alternatives: [evolucion de facturacion, comparacion interanual]
+
+  - id: c060
+    category: out_of_scope
+    question: "¿Que tan contentos estan nuestros clientes?"
+    expected:
+      kind: out_of_scope
+      reason: requiere datos de satisfaccion que no existen en esta conexion
+      offered_alternatives: [facturacion por cliente, operaciones por cliente]
