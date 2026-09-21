@@ -70,18 +70,27 @@ datos dijeron.
 
 La salida no es texto: es una estructura cuyos campos contienen texto.
 
+**Lo que produce el modelo** (`SynthesisOutput`, ver `14_contratos_formato.md` §8):
+
 | Campo | Contenido |
 |---|---|
-| Secciones | Una por objetivo, en el orden en que fueron planteados |
+| Secciones | Una por objetivo, en el orden en que fueron planteados. Cada una solo contiene `objective_id` y sus afirmaciones -- el **estado** del objetivo (satisfecho, insuficiente, rechazado, no ejecutado) no viaja aca: el Ejecutor ya lo determino deterministicamente (seccion 2) y el sistema lo compone en la respuesta final sin pasar por el modelo, para que la sintesis nunca pueda contradecirlo |
 | Afirmaciones | Identificador, `objective_id`, tipo, texto, evidencia referenciada |
-| Conclusion transversal | Opcional y condicionada (seccion 5) |
-| Alcance | Declaracion obligatoria (seccion 6) |
+| Conclusion transversal | Opcional y condicionada (seccion 5). Es una `CrossObjectiveAssertion`, no una `Assertion` |
 | Sugerencias de investigacion | Preguntas nuevas que el sistema si puede responder, nunca ejecutadas solas |
 
-### Ejemplo
+**Lo que compone el sistema, fuera del modelo:** el **alcance** (seccion 6) y el
+**estado por seccion**. Ninguno de los dos es un campo de `SynthesisOutput` -- igual
+que el compositor de alcance (seccion 12) es deliberadamente determinista, el estado ya
+lo conoce el Ejecutor de antemano y redecirlo en el modelo solo agregaria una fuente de
+contradiccion. El ejemplo de abajo muestra la **respuesta final** ya compuesta, no la
+salida cruda del modelo.
+
+### Ejemplo (respuesta final, tras componer estado y alcance)
 
 ```
 section objective_1 (explain_variance)
+  status: satisfecho
 
   a1  type: data
       text: "La facturacion neta de julio fue 4.176.900 ARS frente a
@@ -158,10 +167,16 @@ Este es el punto de mayor riesgo de la parte.
 
 ### Secciones independientes
 
-> **Cada seccion usa unicamente hechos de su propio `objective_id`.**
+> **Toda `Assertion` de una seccion usa unicamente hechos de su propio `objective_id`.**
 
-Es una comprobacion mecanica y no admite excepcion. Un dato de la seccion del ranking
-no puede citar un hecho de la comparacion de periodos.
+Es una comprobacion mecanica y no admite excepcion: **ninguna** `Assertion` normal
+mezcla objetivos, nunca. Un dato de la seccion del ranking no puede citar un hecho de
+la comparacion de periodos.
+
+La conclusion transversal (mas abajo) **no es una excepcion a esta regla**: es un tipo
+distinto, `CrossObjectiveAssertion`, que vive fuera de las secciones y nunca se
+confunde con una `Assertion`. La regla de aislamiento de `Assertion` sigue siendo
+absoluta.
 
 ### El problema de la conclusion transversal
 
@@ -169,15 +184,15 @@ Con dos objetivos independientes, el modelo **vera** relaciones entre sus result
 tendera a enunciarlas. Pero ninguna operacion produjo un hecho que vincule ambos: no
 existe evidencia de la relacion, solo coincidencia de vocabulario.
 
-> Una afirmacion transversal **nunca puede ser un dato**, porque ninguna operacion la
-> produjo.
+> Una `CrossObjectiveAssertion` **nunca puede ser de tipo `dato`**, porque ninguna
+> operacion la produjo.
 
 ### Regla
 
 | Situacion | Conclusion transversal |
 |---|---|
-| Existe **dependencia declarada** entre los objetivos | Permitida como `interpretation`, citando hechos de ambos |
-| Objetivos independientes | **Prohibida.** Se ofrece continuacion sugerida |
+| Existe **dependencia declarada** entre los objetivos | Permitida como `CrossObjectiveAssertion` de tipo `interpretation`, con `objective_ids` los de ambos objetivos y `evidence` citando hechos de ambos |
+| Objetivos independientes | **Prohibida.** No se produce ninguna `CrossObjectiveAssertion`; se ofrece continuacion sugerida en su lugar |
 
 ### Sugerencia de investigacion
 

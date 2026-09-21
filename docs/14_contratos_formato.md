@@ -224,30 +224,150 @@ disponible, defectos del sistema.
 Los esquemas que restringen al modelo se **derivan de estos mismos modelos**. Una sola
 definicion valida la salida y restringe la generacion; no pueden divergir.
 
+Esta seccion cierra una revision de herencia estricta propia: la version anterior
+nombraba `ObjectiveProposal`, `Continuity`, `ConceptMapping`, `ResolvedReference`,
+`MaterialAmbiguity`, `OutOfScope`, `AnswerSection` y `ResearchSuggestion` sin declarar
+sus campos, y ubicaba `continuity`/`concepts`/`premises`/`ambiguities` a nivel de todo
+el turno -- una forma que no puede representar el turno multi-objetivo que
+`07_parte_interpretacion.md` seccion 6bis y `09_parte_ejecutor.md` seccion 7 exigen
+(cada objetivo con su propia continuidad, sus propios conceptos, sus propias premisas).
+Ver seccion 11 para el detalle de los cambios.
+
+### `InterpretationOutput`
+
 ```
 InterpretationOutput
-  objective_proposals:  list[ObjectiveProposal]   maximo configurable
-  continuity:           Continuity                new | continuation + inherited scope
-  concepts:             list[ConceptMapping]      canonico + expresion original
-  time_expressions:     list[str]                 SIN resolver
-  premises:             list[str]
-  references:           list[ResolvedReference]
-  ambiguities:          list[MaterialAmbiguity]
-  out_of_scope:         OutOfScope | None
+  objective_proposals:  list[ObjectiveProposal]   maximo configurable por turno
+  out_of_scope:         list[OutOfScope]           intenciones que no formaron propuesta
   prompt_version:       str
 
+ObjectiveProposal
+  proposal_id:       str                      local, efimero (p1, p2...). El sistema
+                                               le asigna `objective_id` durable recien
+                                               al construir AnalysisPlan (seccion 6)
+  objective:         ObjectiveName
+  continuity:         Continuity
+  concepts:           list[ConceptMapping]
+  time_expressions:   list[str]                SIN resolver
+  filters:            list[Filter]
+  premises:           list[str]
+  references:         list[ResolvedReference]
+  ambiguities:        list[MaterialAmbiguity]
+  plan:               list[ProposedPlanStep]
+  dependency:         ObjectiveDependency | None
+
+Continuity
+  mode:      new | continuation
+  inherits:  list[InheritedField]     InheritedField = period | filters | metric | dimension
+                                       Nunca se hereda por omision: si no esta en la
+                                       lista, no se hereda
+
+ConceptMapping
+  canonical:            str            concepto canonico del catalogo filtrado
+  original_expression:  str
+
+ResolvedReference
+  expression:  str        "esos tres", "eso", "y en junio"
+  resolution:  str
+
+MaterialAmbiguity
+  description:  str
+  options:      list[str]
+
+OutOfScope
+  reason:        str
+  alternatives:  list[str]
+
+ObjectiveDependency
+  source_proposal_id:  str        el proposal_id del que depende esta propuesta
+  binding:              Binding
+
+Binding
+  source_fact_type:  FactType     tipo de hecho del objetivo origen que se consume
+  target_dimension:  str          dimension del objetivo dependiente que recibe el valor
+  operator:          FilterOperator
+
+FilterOperator = eq | neq | in | not_in
+
+ProposedPlanStep
+  step_id:       str                      local, efimero (s1, s2...). El sistema le
+                                           asigna `step_id` durable al construir PlanStep
+  operation:     OperationName
+  arguments:     dict[str, DomainValue]
+  condition:     Condition | None
+  derives_from:  list[str]                step_id locales de este mismo plan propuesto
+
+DomainValue = str | int | Granularity | SortDirection
+
+SortDirection = ascending | descending
+```
+
+> **`Binding` declara la dependencia, no la ejecuta.** En este bloque `Binding` es una
+> declaracion semantica: que tipo de hecho se consume y a que dimension se aplica. Como
+> extraer el valor concreto de un `Fact` compuesto (por ejemplo, cual campo de un
+> `ranking_element` es el identificador que debe convertirse en valor de filtro) **no
+> esta resuelto**: `Fact.value` (seccion 5) no declara la forma interna de sus hechos
+> compuestos. Es un hueco contractual pendiente, registrado para resolverse antes de
+> que el bloque que construye `AnalysisPlan` a partir de `InterpretationOutput` consuma
+> un `Binding` real.
+
+`DomainValue` es la union cerrada de los tipos concretos que hoy necesitan los
+argumentos de las diez operaciones de `10_parte_operaciones.md` seccion 8 (excluyendo
+`filters`, que vive en `ObjectiveProposal.filters`, no en `arguments`). No incluye
+`Decimal`: ningun parametro lo necesita mientras el modelo no tenga autoridad
+confirmada para proponer un valor propio de `sensitivity` o `coverage_threshold` --
+ver el punto abierto 5 de `10_parte_operaciones.md` seccion 12. Si ese punto se
+resuelve a favor de permitir un valor propuesto, `DomainValue` se amplia entonces, no
+antes.
+
+### `SynthesisOutput`
+
+```
 SynthesisOutput
-  sections:             list[AnswerSection]       una por objetivo
-  cross_objective:      Assertion | None          solo con dependencia declarada
-  suggestions:          list[ResearchSuggestion]
-  prompt_version:       str
+  sections:         list[AnswerSection]
+  cross_objective:  CrossObjectiveAssertion | None
+  suggestions:       list[ResearchSuggestion]
+  prompt_version:    str
+
+AnswerSection
+  objective_id:  str
+  assertions:    list[Assertion]
 
 Assertion
   id, objective_id, turn_id
   kind:      AssertionKind    dato | interpretacion | hipotesis
   text:      str
   evidence:  list[str]        identificadores de Fact
+
+CrossObjectiveAssertion
+  turn_id:        str
+  objective_ids:  list[str]    los objetivos citados; solo con dependencia declarada
+  kind:            AssertionKind
+  text:            str
+  evidence:        list[str]
+
+ResearchSuggestion
+  question:  str
 ```
+
+> **`Assertion` y `CrossObjectiveAssertion` son tipos distintos, no una variante con
+> excepcion.** La regla de aislamiento -- ninguna afirmacion mezcla hechos de objetivos
+> distintos -- es absoluta para `Assertion`, sin excepcion alguna. `CrossObjectiveAssertion`
+> no la excepciona: es un tipo separado que nunca aparece dentro de una `AnswerSection`,
+> solo en el campo `cross_objective` de `SynthesisOutput`, y solo cuando existe
+> dependencia declarada entre los objetivos que cita (`08_parte_sintesis.md` seccion 5).
+
+> **`status` y `scope` no son campos de `SynthesisOutput`.** El estado de cada objetivo
+> (satisfecho, insuficiente, rechazado, no ejecutado) ya lo determina el Ejecutor
+> deterministicamente (`09_parte_ejecutor.md` seccion 3); el alcance lo compone el
+> compositor de alcance, tambien deterministico (`08_parte_sintesis.md` seccion 12).
+> Que el modelo los reprodujera abriria una fuente de contradiccion entre lo que el
+> sistema ya sabe y lo que el modelo redacta. Ambos se agregan a la respuesta final
+> (`Answer`) fuera de `SynthesisOutput`.
+
+`ResearchSuggestion` no lleva identificador: el modelo no genera identificadores
+persistentes sin necesidad. Si una interfaz necesita referenciar una sugerencia
+individual, el sistema le asigna un id **despues** de recibir `SynthesisOutput`, no antes.
 
 > **El esquema garantiza forma, no verdad.**
 
@@ -255,7 +375,10 @@ Una salida estructuralmente valida puede citar cifras inexistentes o evidencia f
 alcance. La validacion de salida sigue siendo obligatoria: el esquema elimina una clase
 entera de fallos y deja intacta la que importa.
 
-`time_expressions` viaja **sin resolver** a proposito. Es el punto donde el formato hace
+`time_expressions` viaja **sin resolver** a proposito, y ahora vive dentro de cada
+`ObjectiveProposal` porque objetivos distintos del mismo turno pueden mencionar
+expresiones temporales distintas (`07_parte_interpretacion.md` seccion 6bis: "julio"
+pertenece a un objetivo, "el ano actual" a otro). Es el punto donde el formato hace
 cumplir la frontera con Conocimiento del negocio: el modelo no tiene ningun campo donde
 escribir una fecha.
 
@@ -376,16 +499,17 @@ Resultado de bajar los diez contratos semanticos al nivel de formato:
 | Contexto de acceso | Sin cambios |
 | Sesion de analisis | **Cambio menor**: el registro durable incorpora `prompt_version` |
 | Conocimiento del negocio | Sin cambios |
-| Interpretacion | Sin cambios. `time_expressions` sin resolver quedo impuesto por el esquema |
-| Sintesis | Sin cambios |
+| Interpretacion | **Cambio**: la version anterior de `InterpretationOutput` no podia representar un turno con mas de un objetivo, cada uno con su propia continuidad, conceptos y premisas (`07` seccion 6bis). Se movieron esos campos a `ObjectiveProposal` y se agrego `proposal_id`, `dependency` y `ObjectiveDependency` para expresar dependencias entre objetivos sin ids persistentes prematuros. `time_expressions` sin resolver quedo impuesto por el esquema, ahora por objetivo |
+| Sintesis | **Cambio**: se introdujo `CrossObjectiveAssertion` como tipo separado de `Assertion`, para que la regla de aislamiento de `Assertion` (`09` seccion 10) siga siendo absoluta sin una excepcion implicita. Se retiraron `status` y `scope` de `SynthesisOutput`: ambos los compone el sistema deterministicamente, nunca el modelo |
 | Ejecutor | **Cambio menor**: `derives_from` explicito en `PlanStep` |
 | Operaciones analiticas | Sin cambios |
 | Acceso a datos | Sin cambios |
 | Conjuntos de datos | **Cambio menor**: el descriptor contiene la peticion en vez de repetirla |
 
-Tres ajustes menores, ninguna violacion. Las dos decisiones que mas presion ejercieron
-sobre el formato —el lenguaje cerrado de condiciones y los identificadores obligatorios—
-resultaron expresables sin concesiones.
+Cinco ajustes, ninguna violacion sin resolver: los dos de Interpretacion y Sintesis se
+detectaron y cerraron en la misma revision que motiva esta nota. Las dos decisiones que
+mas presion ejercieron sobre el formato —el lenguaje cerrado de condiciones y los
+identificadores obligatorios— resultaron expresables sin concesiones.
 
 ### `prompt_version` en el registro durable
 

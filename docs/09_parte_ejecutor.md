@@ -425,7 +425,7 @@ validacion es mecanica:
 | Respaldo | Toda afirmacion de tipo `dato` referencia al menos un hecho |
 | Correspondencia | Toda cifra del texto de un `dato` coincide con un valor de sus hechos, dentro de la tolerancia de redondeo declarada |
 | Existencia | No referencia hechos que no fueron publicados en este turno |
-| Aislamiento | Ninguna afirmacion mezcla hechos de objetivos distintos ni de turnos distintos |
+| Aislamiento | Ninguna `Assertion` mezcla hechos de objetivos distintos ni de turnos distintos, sin excepcion. Una `CrossObjectiveAssertion` es un tipo distinto, no una `Assertion`: solo existe cuando hay dependencia declarada entre los objetivos que cita, y su regla propia esta en `08_parte_sintesis.md` seccion 5 |
 | Alcance | No referencia evidencia fuera del contexto de acceso vigente |
 | Declaracion de alcance | Si algun hecho trae alcance restringido, la respuesta lo refleja |
 | Etiquetado | Las afirmaciones no respaldadas estan etiquetadas como `hipotesis` |
