@@ -39,8 +39,13 @@ no cambia nunca.
 - Fichas de 10 operaciones y 7 objetivos, con hechos publicados declarados.
 - Puerto del modelo con salida estructurada y su doble determinista.
 - Interpretacion y validador estatico de plan.
-- Banco de 60 casos con interpretacion esperada, **congelado antes de la primera corrida**.
-- Comando de evaluacion y reporte de metricas.
+- ~~Banco de 60 casos con interpretacion esperada, congelado antes de la primera
+  corrida.~~ **Hecho** (bloque 1.7): `semantic/demo/evaluation/cases.yaml`, 60 casos,
+  distribucion 40/15/15/10/10/10 verificada por test.
+- ~~Comando de evaluacion y reporte de metricas.~~ **Hecho** (bloque 1.7):
+  `querypilot-eval run <conexion>`, formulas de A1/A2/A4/B1/B2 y diagnosticos
+  probadas con `DeterministicModelPort`. Falta unicamente el proveedor real
+  (bloque 1.8) para correr el banco de verdad.
 - Corrida del experimento y decision registrada sobre el supuesto.
 
 ## Proxima decision

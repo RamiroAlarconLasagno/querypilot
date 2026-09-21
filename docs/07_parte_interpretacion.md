@@ -400,35 +400,110 @@ Con un doble del modelo que devuelve propuestas fijas:
 
 ### Evaluacion de interpretacion — con modelo, contra el banco de casos
 
-Cada caso declara pregunta e interpretacion esperada:
+Bloque 1.7. Cada caso (`business_knowledge/evaluation_cases.py`, `EvaluationCase`)
+declara pregunta e interpretacion esperada. `expected` es una union discriminada
+por `kind`, simetrica a `InterpretationOutcome`:
 
 ```
 question:
-  "¿Quienes fueron nuestros mejores clientes este trimestre?"
+  "Mostrame los mejores clientes de este trimestre"
 
 expected:
-  objective:  rank
-  metric:     net_revenue             (con acepcion por defecto declarada)
-  dimension:  customer
-  temporal:   "este trimestre"
-  order:      descending
-  limit:      10
+  kind: ambiguity
+  description: 'criterio de "mejores"'
+  options: [net_revenue, units_sold, operations]
 ```
 
-Metricas del banco:
+```
+question:
+  "¿Cuanto facturamos en julio?"
+
+expected:
+  kind: plan
+  objectives:
+    - objective: query_metric
+      metric: net_revenue
+      temporal: [julio]
+```
+
+El tercer `kind` es `out_of_scope` (`reason`, `offered_alternatives`, y opcionalmente
+`rejection_cause` cuando lo que declina es un validador deterministico -- p. ej. un
+concepto inexistente -- en vez del modelo). Un caso **no declara cifras**: la
+interpretacion esperada depende solo de la capa semantica.
+
+Categorias y composicion fija del banco (60 casos, `CaseCategory` en el mismo modulo):
+
+| Categoria | % | Casos |
+|---|---|---|
+| `direct` | 40 % | 24 |
+| `material_ambiguity` | 15 % | 9 |
+| `continuation` | 15 % | 9 |
+| `premise` | 10 % | 6 |
+| `multiple_objectives` | 10 % | 6 |
+| `out_of_scope` | 10 % | 6 |
+
+`direct`, `premise`, `continuation` y `multiple_objectives` son "plan_expected": el
+turno debe terminar en un `AnalysisPlan`. Es el subconjunto sobre el que se miden
+A1/A2/B1/B2 (`01_metodo_solucion.md` seccion 12).
+
+### Formulas de A1/A2/A4/B1/B2
+
+No estaban especificadas con precision en ningun documento anterior a este bloque --
+se registran aca, junto al codigo que las implementa
+(`interpretation/case_comparator.py`, `interpretation/evaluation_metrics.py`):
+
+| Metrica | Formula |
+|---|---|
+| A1 | `AnalysisPlan` semanticamente correcto al primer intento / total plan_expected |
+| A2 | `AnalysisPlan` semanticamente incorrecto al primer intento / total plan_expected |
+| A4 | casos con `expected.kind != out_of_scope` declinados por alcance / total de esos casos |
+| B1 | plan valido (pasa la validacion estatica) al primer intento / total plan_expected |
+| B1+B2 | plan valido al primer intento o tras un unico reintento / total plan_expected |
+
+El denominador de A4 **incluye** `material_ambiguity`: una pregunta ambigua sigue
+siendo respondible, y declinarla como fuera de alcance es el mismo error que declinar
+una pregunta directa. Una aclaracion innecesaria resta A1 (no cumple "sin aclaracion")
+pero no es A2: A2 mide exclusivamente el desenlace silencioso -- un plan que se
+construyo y esta mal. Un rechazo con causa (`Rejected`) tampoco es A2, por la misma
+razon: lleva causa y accion, no es silencioso.
+
+"Declinado por alcance" (para A4) cubre dos caminos: el modelo declara `out_of_scope`
+por su cuenta, o un validador deterministico rechaza por una causa de
+existencia/alcance del concepto (`nonexistent_concept`, `unauthorized_concept`,
+`objective_not_available`). `invalid_parameters` y las demas causas estructurales no
+cuentan: son un plan mal formado, no una declinacion de alcance.
+
+El comparador semantico solo verifica lo que cada `ExpectedObjective` declara
+(objetivo, metrica, dimension, expresiones temporales, presencia de premisas,
+dependencia con el objetivo anterior, operacion del plan cuando se declara) --
+nunca `proposal_id`, `step_id` ni ningun identificador durable.
+
+Metricas diagnosticas (no son criterio de aceptacion, solo lectura fina):
 
 | Metrica | Que mide |
 |---|---|
-| Acierto de objetivo | Proporcion de casos con el objetivo correcto |
-| Acierto de conceptos | Metrica y dimension correctas |
-| Validez de plan | Proporcion de planes que pasan la validacion estatica |
-| Tasa de aclaracion | Cuantas veces pregunta; alta arruina la experiencia, baja oculta errores |
-| Falsos fuera de alcance | Preguntas respondibles declaradas fuera de alcance |
-| Herencia correcta | Continuaciones que heredan lo que corresponde |
+| Acierto de objetivo | Casos plan_expected donde el objetivo propuesto coincide |
+| Acierto de conceptos | Casos plan_expected donde metrica y dimension coinciden |
+| Tasa de aclaracion | Proporcion del banco entero que el sistema decide aclarar |
+| Acierto fuera de alcance | Casos `out_of_scope` correctamente declinados |
+| Herencia correcta | Casos `continuation` donde `inherits` coincide con lo declarado |
+| Validez de plan | Alias de B1 |
 
 El banco se re-corre **cada vez que cambia la capa semantica**, porque un cambio de
 vocabulario puede romper interpretaciones que antes funcionaban. Esa regresion es el
-motivo principal por el que existe el banco.
+motivo principal por el que existe el banco. Congelamiento: el banco se fija por commit
+antes de la primera corrida real (bloque 1.8) y no se modifica en funcion de los
+resultados (`01_metodo_solucion.md` seccion 12); el reporte de cada corrida
+(`interpretation/evaluation_metrics.py`, `EvaluationReport`) registra `semantic_version`
+y `prompt_version` juntos, porque se versionan por separado pero se evaluan juntos
+(`14_contratos_formato.md` seccion 11).
+
+`querypilot-eval run <conexion>` (`interpretation/evaluation_cli.py`) carga el
+artefacto, lo valida, carga el banco y arma el reporte -- pero se detiene con un
+mensaje explicito antes de invocar ningun modelo: bloque 1.7 entrega el instrumento
+completo, probado entero con `DeterministicModelPort`
+(`tests/interpretation/evaluation/`); la implementacion real de `ModelPort` con
+proveedor y clave es bloque 1.8.
 
 ---
 

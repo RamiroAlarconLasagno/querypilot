@@ -456,6 +456,36 @@ pertenece a un objetivo, "el ano actual" a otro). Es el punto donde el formato h
 cumplir la frontera con Conocimiento del negocio: el modelo no tiene ningun campo donde
 escribir una fecha.
 
+### `EvaluationCase` — banco de evaluacion (bloque 1.7)
+
+`business_knowledge/evaluation_cases.py`. Un caso es pregunta + interpretacion
+esperada, **nunca cifras**: la interpretacion esperada depende solo de la capa
+semantica. `expected` es una union discriminada por `kind`, simetrica a
+`InterpretationOutcome` (`interpretation/service.py`):
+
+| `kind` | Campos | Corresponde a |
+|---|---|---|
+| `plan` | `objectives: tuple[ExpectedObjective, ...]`, `inherits` (solo `continuation`) | `PlanReady` |
+| `ambiguity` | `description`, `options` | `NeedsClarification` con `ambiguities` |
+| `out_of_scope` | `reason`, `offered_alternatives`, `rejection_cause?`, `must_not_name` | `NeedsClarification` con `out_of_scope`, o `Rejected` cuando lo declina un validador deterministico |
+
+`ExpectedObjective` declara solo lo que el comparador semantico verifica: `objective`,
+`metric`, `dimension`, `temporal`, `premises` (presencia, no texto exacto),
+`operations` (cuando el plan debe usar una operacion concreta, p. ej. `breakdown`) y
+`depends_on_previous`. Nunca `proposal_id`, `step_id` ni ids durables: son accidentes
+de una corrida, no parte de la interpretacion esperada. Formulas de A1/A2/A4/B1/B2 y
+metricas diagnosticas: `07_parte_interpretacion.md` seccion 10.
+
+### `PlanReady` conserva el `InterpretationOutput` crudo (ajuste de 1.7)
+
+`interpretation/service.py`. `PlanReady` (tipo local, no durable) ahora lleva tambien
+`output: InterpretationOutput` ademas de `plan: AnalysisPlan`. Cambio aditivo, ningun
+campo existente se toco. Motivo: `AnalysisPlan` (este `AnalysisPlan`, durable, seccion
+6) deliberadamente no lleva premisas ni conceptos -- son insumos de Interpretacion, no
+del plan que el Ejecutor persiste -- y el comparador semantico del banco de evaluacion
+necesita verificar exactamente eso. Se prefirio extender el tipo local antes que agregar
+campos ajenos a `AnalysisPlan`.
+
 ---
 
 ## 9. Superficie HTTP

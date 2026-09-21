@@ -21,6 +21,16 @@ mismo turno tuvieran plan valido. Manejar turnos mixtos (algunos objetivos
 listos, otros no) con precision es un caso mas rico que ningun test de
 cierre ejercita todavia -- queda anotado para revisar en 1.7 si el banco de
 casos lo necesita.
+
+Ajuste de 1.7: `PlanReady` ahora conserva tambien el `InterpretationOutput`
+crudo, ademas del `AnalysisPlan` construido. `AnalysisPlan` (canonical_language,
+durable) deliberadamente no lleva premisas ni concepts -- son insumos de
+Interpretacion, no del plan que el Ejecutor persiste. El comparador semantico
+del banco de evaluacion (business_knowledge/evaluation_cases.py,
+interpretation/case_comparator.py) necesita verificar exactamente eso, asi
+que en vez de agregar campos ajenos a `AnalysisPlan`, `PlanReady` -- que ya es
+un tipo local, chico, no durable -- lleva ambos. Cambio aditivo, sin tocar
+ningun campo existente.
 """
 
 from __future__ import annotations
@@ -49,6 +59,7 @@ from querypilot.model_port.structured_output import (
 class PlanReady(BaseModel):
     kind: Literal["plan_ready"] = "plan_ready"
     plan: AnalysisPlan
+    output: InterpretationOutput
 
 
 class Rejected(BaseModel):
@@ -87,7 +98,7 @@ def _finish(
         output, turn_id=turn_id, plan_id=plan_id, thresholds=artifact.connection.thresholds
     )
     if isinstance(result, AnalysisPlan):
-        return PlanReady(plan=result)
+        return PlanReady(plan=result, output=output)
     return Rejected(rejections=result)
 
 
