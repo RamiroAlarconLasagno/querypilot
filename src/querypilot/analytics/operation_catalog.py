@@ -11,18 +11,15 @@ from enum import StrEnum
 
 from pydantic import BaseModel
 
+from querypilot.canonical_language.shared_values import OperationName
 
-class OperationName(StrEnum):
-    COMPARE_PERIODS = "compare_periods"
-    DECOMPOSE_VARIANCE = "decompose_variance"
-    RANK = "rank"
-    QUERY_METRIC = "query_metric"
-    BREAKDOWN = "breakdown"
-    TIME_SERIES = "time_series"
-    COUNT = "count"
-    DESCRIBE_DATASET = "describe_dataset"
-    DETECT_ANOMALY = "detect_anomaly"
-    CALCULATE_SHARE = "calculate_share"
+__all__ = [
+    "OPERATION_CATALOG",
+    "OperationCard",
+    "OperationName",
+    "Parameter",
+    "UniverseRequirement",
+]
 
 
 class UniverseRequirement(StrEnum):

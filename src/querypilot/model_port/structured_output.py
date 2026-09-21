@@ -12,13 +12,13 @@ from enum import StrEnum
 
 from pydantic import BaseModel
 
-from querypilot.analytics.objective_catalog import ObjectiveName
-from querypilot.analytics.operation_catalog import OperationName
 from querypilot.canonical_language.shared_values import (
     Binding,
     Condition,
     DomainValue,
     Filter,
+    ObjectiveName,
+    OperationName,
 )
 
 
@@ -52,6 +52,7 @@ class ResolvedReference(BaseModel):
 class MaterialAmbiguity(BaseModel):
     description: str
     options: tuple[str, ...]
+    expression: str | None = None
 
 
 class OutOfScope(BaseModel):

@@ -165,7 +165,7 @@ AnalysisPlan
 
 PlannedObjective
   objective_id, objective: ObjectiveName
-  sufficiency:  Condition
+  sufficiency:  SufficiencyCriterion
   dependency:   PlannedObjectiveDependency | None
   steps:        list[PlanStep]
 
@@ -186,6 +186,15 @@ Condition
   fact_type:  FactType
   operator:   ConditionOperator    lt | lte | gt | gte | eq | neq
   value:      Decimal | ThresholdName
+
+SufficiencyCriterion = AllStepsCompleted | FactValueCondition   -- discriminado por kind
+
+AllStepsCompleted
+  kind:  "all_steps_completed"
+
+FactValueCondition
+  kind:       "fact_value_condition"
+  condition:  Condition
 ```
 
 > `Condition` tiene **tres campos y seis operadores**. No admite composicion, negacion ni
@@ -198,6 +207,31 @@ conocimiento del dominio volveria al Ejecutor por la puerta de atras.
 `derives_from` es la novedad del nivel de formato: hace **explicita en el dato** la
 dependencia entre pasos que la coherencia de captura necesita comprobar. En el contrato
 semantico estaba descrita en prosa; aqui es un campo.
+
+### `SufficiencyCriterion` — dos responsabilidades separadas de `Condition`
+
+`Condition` sigue siendo el lenguaje simple de `PlanStep.condition`: una comparacion
+sobre el valor de un hecho, para controlar el flujo del plan. `PlannedObjective.sufficiency`
+resuelve una pregunta distinta -- si el objetivo ya reunio evidencia suficiente -- y
+no siempre es una comparacion de valor.
+
+De los siete objetivos de `10_parte_operaciones.md` §2, seis no comparan el valor de
+ningun hecho: su criterio humano ("la métrica se obtuvo", "ambos términos obtenidos",
+"se evaluó la serie completa") es una pregunta de **finalización**, no de magnitud.
+`AllStepsCompleted` la representa sin mirar ningún `Fact`: todos los `PlanStep` del
+objetivo alcanzaron `state == completed`. No vuelve a validar el resultado de la
+operación -- cada operación es responsable de cumplir su propio contrato antes de
+llegar a ese estado (`10_parte_operaciones.md`). Esto también resuelve el caso de
+`rank`: si se piden 10 elementos y el universo autorizado tiene 6, la operación
+completa correctamente con 6, y el objetivo queda satisfecho -- no hace falta comparar
+la cantidad publicada contra `n`.
+
+Solo `explain_variance` necesita una comparación real de valor
+(`explained_coverage >= min_explanation_coverage`), y usa `FactValueCondition`, que
+envuelve un `Condition` sin cambiar su forma.
+
+`explore` no tiene hoy ningún `SufficiencyCriterion` representable -- ver
+`10_parte_operaciones.md` §2, nota de diferimiento en el MVP 1.
 
 ### `PlannedObjectiveDependency` reemplaza a `depends_on: str | None`
 
@@ -237,6 +271,20 @@ como excepcion contradice la clasificacion de estados del diseno.
 
 Las excepciones quedan reservadas para fallas operativas: fuente caida, modelo no
 disponible, defectos del sistema.
+
+### `RejectionCause`, poblado incrementalmente
+
+`RejectionCause` transcribe hoy las diez causas genericas ya cerradas de
+`10_parte_operaciones.md` seccion 7 (`nonexistent_concept`, `unauthorized_concept`,
+`incompatible_dimension`, `granularity_not_available`, `invalid_parameters`,
+`insufficient_universe`, `row_limit_exceeded`, `time_limit_exceeded`,
+`period_without_data`, `source_not_available`), mas `objective_not_available`
+(`07_parte_interpretacion.md`, guarda de `proposal_builder` contra un objetivo sin
+criterio de suficiencia verificable). Las causas propias de cada operacion
+(`overlapping_periods`, `excessive_cardinality`, `zero_variance`, `excessive_n`,
+`nonexistent_filter_value`...) se agregan al enum cuando el validador que las
+produce se implementa, no antes -- mismo criterio que ya rige el crecimiento del
+catalogo de operaciones.
 
 ---
 
@@ -294,6 +342,11 @@ ResolvedReference
 MaterialAmbiguity
   description:  str
   options:      list[str]
+  expression:   str | None    la palabra o frase exacta del usuario cuyo sentido
+                              esta en disputa ("mejores", "ventas"). None cuando
+                              la ambiguedad no es de eleccion de concepto
+                              consultable via default_sense_of (por ejemplo, una
+                              referencia conversacional no localizable)
 
 OutOfScope
   reason:        str

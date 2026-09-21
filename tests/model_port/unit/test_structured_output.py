@@ -9,14 +9,14 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from querypilot.analytics.objective_catalog import ObjectiveName
-from querypilot.analytics.operation_catalog import OperationName
 from querypilot.canonical_language.shared_values import (
     Binding,
     Condition,
     ConditionOperator,
     FilterOperator,
     Granularity,
+    ObjectiveName,
+    OperationName,
     SortDirection,
     ThresholdName,
 )
@@ -101,6 +101,7 @@ def _interpretation_output() -> InterpretationOutput:
             MaterialAmbiguity(
                 description='criterio de "mejores"',
                 options=("facturacion neta", "unidades vendidas"),
+                expression="mejores",
             ),
         ),
         plan=(
@@ -251,4 +252,13 @@ def test_answer_section_has_no_status_field() -> None:
 
 def test_synthesis_output_has_no_scope_field() -> None:
     assert "scope" not in SynthesisOutput.model_fields
+
+
+def test_material_ambiguity_expression_defaults_to_none() -> None:
+    """07_parte_interpretacion.md seccion 5: expression es None cuando la
+    ambiguedad no es de eleccion de concepto (p. ej. una referencia
+    conversacional no localizable), no consultable via default_sense_of.
+    """
+    ambiguity = MaterialAmbiguity(description="esos tres sin referente localizable", options=())
+    assert ambiguity.expression is None
     assert "status" not in SynthesisOutput.model_fields

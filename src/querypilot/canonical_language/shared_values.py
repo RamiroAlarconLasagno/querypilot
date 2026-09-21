@@ -8,14 +8,41 @@ Granularity es parte de DataRequest (14_contratos_formato.md seccion 3).
 FactType, Condition y sus piezas las necesitan tanto la salida del modelo
 (model_port) como el plan durable (canonical_language/plan.py) y, mas
 adelante, el Ejecutor -- ninguna de las tres puede depender de las otras dos.
+Lo mismo vale para ObjectiveName y OperationName: los catalogos de
+analytics/ los declaran con su ficha completa, pero el identificador en si
+lo necesitan tambien model_port y canonical_language/plan.py.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 from enum import StrEnum
+from typing import Annotated, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class ObjectiveName(StrEnum):
+    QUERY_METRIC = "query_metric"
+    COMPARE = "compare"
+    RANK = "rank"
+    EXPLAIN_VARIANCE = "explain_variance"
+    DETECT_ANOMALY = "detect_anomaly"
+    DESCRIBE_DATASET = "describe_dataset"
+    EXPLORE = "explore"
+
+
+class OperationName(StrEnum):
+    COMPARE_PERIODS = "compare_periods"
+    DECOMPOSE_VARIANCE = "decompose_variance"
+    RANK = "rank"
+    QUERY_METRIC = "query_metric"
+    BREAKDOWN = "breakdown"
+    TIME_SERIES = "time_series"
+    COUNT = "count"
+    DESCRIBE_DATASET = "describe_dataset"
+    DETECT_ANOMALY = "detect_anomaly"
+    CALCULATE_SHARE = "calculate_share"
 
 
 class Granularity(StrEnum):
@@ -92,6 +119,23 @@ class Filter(BaseModel):
     values: tuple[str, ...]
 
 
+class AnalyticalState(BaseModel):
+    """Estado analitico vigente. 05_parte_sesion_analisis.md seccion 3: lo
+    que da sentido a "saca esos tres y compara de nuevo". Vive aqui, no en
+    analysis_session/ (todavia no construida en este MVP), porque tanto
+    Sesion como Interpretacion lo necesitan -- Interpretacion para resolver
+    continuidad y referencias.
+    """
+
+    period: str
+    metric: str | None = None
+    dimension: str | None = None
+    filters: tuple[Filter, ...] = ()
+    applied_definitions: str | None = None
+    last_reference: str | None = None
+    semantic_version: str
+
+
 class SortDirection(StrEnum):
     ASCENDING = "ascending"
     DESCENDING = "descending"
@@ -104,3 +148,27 @@ class Binding(BaseModel):
 
 
 DomainValue = str | int | Granularity | SortDirection
+
+
+class SufficiencyKind(StrEnum):
+    ALL_STEPS_COMPLETED = "all_steps_completed"
+    FACT_VALUE_CONDITION = "fact_value_condition"
+
+
+class AllStepsCompleted(BaseModel):
+    """Todos los PlanStep del objetivo alcanzaron state == completed. No
+    vuelve a mirar hechos: cada operacion es responsable de cumplir su
+    propio contrato antes de llegar a ese estado (10_parte_operaciones.md).
+    """
+
+    kind: Literal[SufficiencyKind.ALL_STEPS_COMPLETED] = SufficiencyKind.ALL_STEPS_COMPLETED
+
+
+class FactValueCondition(BaseModel):
+    kind: Literal[SufficiencyKind.FACT_VALUE_CONDITION] = SufficiencyKind.FACT_VALUE_CONDITION
+    condition: Condition
+
+
+SufficiencyCriterion = Annotated[
+    AllStepsCompleted | FactValueCondition, Field(discriminator="kind")
+]

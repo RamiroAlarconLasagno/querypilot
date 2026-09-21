@@ -113,6 +113,24 @@ Un objetivo que no esta en el catalogo no puede ser propuesto. Si el modelo inte
 una intencion que no mapea a ningun objetivo, la salida correcta es
 `out_of_scope`, con explicacion de que si puede hacerse.
 
+### `explore` queda diferido en el MVP 1
+
+`explore` permanece en el catalogo cerrado de siete objetivos, pero **no se ofrece al
+modelo en el MVP 1**: `material_builder` excluye del material que arma cualquier
+`ObjectiveCard` sin criterio de suficiencia verificable (`sufficiency_condition is
+None`), y hoy `explore` es el unico caso.
+
+Motivo: "dimensiones del panorama" no tiene ubicacion contractual en ningun documento
+-- no es un campo de `Thresholds`, de `Connection`, ni de ningun otro modelo -- y no
+existe un solo caso trabajado con `objective: explore` en `07_parte_interpretacion.md`.
+Definir el criterio ahora seria inventar producto sin evidencia. Se revisa cuando
+existan casos reales del banco que permitan fijarlo sin adivinar: si la lista de
+dimensiones debe ser configuracion estable de la conexion, parte explicita del plan de
+cada turno, o si el criterio humano actual necesita redefinirse primero.
+
+`ObjectiveName.EXPLORE` se conserva en el enum -- eliminarlo complicaria el contrato
+mas de lo que simplifica excluirlo del material presentado al modelo.
+
 ### Relacion entre los tres
 
 ```mermaid
