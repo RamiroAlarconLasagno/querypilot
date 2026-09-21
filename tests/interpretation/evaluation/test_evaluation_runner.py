@@ -35,6 +35,7 @@ from querypilot.canonical_language.shared_values import (
     Granularity,
     ObjectiveName,
 )
+from querypilot.interpretation.evaluation_metrics import MetricValue
 from querypilot.interpretation.evaluation_runner import run_bank_evaluation
 from querypilot.model_port.structured_output import (
     ConceptMapping,
@@ -377,10 +378,16 @@ async def test_run_bank_evaluation_end_to_end_with_a_routed_double() -> None:
         operation_catalog=OPERATION_CATALOG,
         artifact=_artifact(),
         semantic_version="test_version",
+        provider="doble",
+        model="fixture",
     )
 
     assert report.total_cases == 7
+    assert report.evaluated_cases == 7
+    assert report.operational_failures == 0
     assert report.semantic_version == "test_version"
+    assert report.provider == "doble"
+    assert report.model == "fixture"
     assert report.a1_correct_without_clarification.numerator == 4
     assert report.a1_correct_without_clarification.denominator == 5
     assert report.a2_silent_error.numerator == 0
@@ -396,3 +403,76 @@ async def test_run_bank_evaluation_end_to_end_with_a_routed_double() -> None:
     assert report.clarification_rate.denominator == 7
     assert report.inheritance_accuracy.numerator == 1
     assert report.inheritance_accuracy.denominator == 1
+
+
+class _FlakyModelPort:
+    """Levanta una excepcion generica (falla operativa: timeout, limite de
+    tasa, parseo) para una pregunta puntual; responde normal para el resto.
+    """
+
+    def __init__(self, failing_question: str, output: InterpretationOutput) -> None:
+        self._failing_question = failing_question
+        self._output = output
+
+    async def interpret(
+        self, prompt_version: str, system_prompt: str, user_prompt: str
+    ) -> InterpretationOutput:
+        if self._failing_question in user_prompt:
+            raise RuntimeError("timeout simulado")
+        return self._output.model_copy(update={"prompt_version": prompt_version})
+
+    async def synthesize(
+        self, prompt_version: str, system_prompt: str, user_prompt: str
+    ) -> SynthesisOutput:
+        raise NotImplementedError
+
+
+async def test_an_operational_failure_on_one_case_does_not_abort_the_rest_of_the_bank() -> None:
+    ok_case = EvaluationCase(
+        id="ok",
+        category=CaseCategory.DIRECT,
+        question="Q_OK",
+        expected=ExpectedPlan(
+            objectives=(
+                ExpectedObjective(
+                    objective=ObjectiveName.QUERY_METRIC, metric="net_revenue", temporal=("julio",)
+                ),
+            )
+        ),
+    )
+    failing_case = EvaluationCase(
+        id="fails",
+        category=CaseCategory.DIRECT,
+        question="Q_TIMEOUT",
+        expected=ExpectedPlan(
+            objectives=(
+                ExpectedObjective(objective=ObjectiveName.QUERY_METRIC, metric="net_revenue"),
+            )
+        ),
+    )
+    output = InterpretationOutput(
+        objective_proposals=(
+            _proposal("p1", ObjectiveName.QUERY_METRIC, temporal=("julio",), plan=(_step(),)),
+        ),
+        out_of_scope=(),
+        prompt_version="fixture",
+    )
+    model_port = _FlakyModelPort(failing_question="Q_TIMEOUT", output=output)
+
+    report = await run_bank_evaluation(
+        model_port=model_port,
+        cases=(ok_case, failing_case),
+        prompt_version="v1",
+        objective_catalog=OBJECTIVE_CATALOG,
+        operation_catalog=OPERATION_CATALOG,
+        artifact=_artifact(),
+        semantic_version="test_version",
+        provider="openai",
+        model="gpt-test",
+    )
+
+    assert report.total_cases == 2
+    assert report.evaluated_cases == 1
+    assert report.operational_failures == 1
+    assert report.operational_failure_case_ids == ("fails",)
+    assert report.a1_correct_without_clarification == MetricValue(numerator=1, denominator=1)

@@ -44,9 +44,17 @@ no cambia nunca.
   distribucion 40/15/15/10/10/10 verificada por test.
 - ~~Comando de evaluacion y reporte de metricas.~~ **Hecho** (bloque 1.7):
   `querypilot-eval run <conexion>`, formulas de A1/A2/A4/B1/B2 y diagnosticos
-  probadas con `DeterministicModelPort`. Falta unicamente el proveedor real
-  (bloque 1.8) para correr el banco de verdad.
-- Corrida del experimento y decision registrada sobre el supuesto.
+  probadas con `DeterministicModelPort`.
+- ~~Adaptador real de `ModelPort`.~~ **Hecho** (bloque 1.8): `OpenAIModelPort`
+  (`model_port/openai_adapter.py`, Structured Outputs degradado -- ver
+  `13_decisiones_tecnicas.md` seccion 6bis), `model_port/factory.py`
+  (`QP_MODEL_PROVIDER`/`QP_MODEL_NAME`), fallas operativas separadas de las
+  metricas de dominio, registro de cada corrida (`--report`, `--history-dir`)
+  y guardarraíl de tres iteraciones. Probado entero sin `OPENAI_API_KEY`.
+- **Corrida real del experimento y decision registrada sobre el supuesto —
+  pendiente.** Necesita `OPENAI_API_KEY` y autorizacion explicita: consume el
+  modelo real y tiene costo. Es la unica pieza de 5.1 que no se puede cerrar
+  sin esa autorizacion.
 
 ## Proxima decision
 

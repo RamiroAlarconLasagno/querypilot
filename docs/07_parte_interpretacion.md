@@ -478,6 +478,13 @@ El comparador semantico solo verifica lo que cada `ExpectedObjective` declara
 dependencia con el objetivo anterior, operacion del plan cuando se declara) --
 nunca `proposal_id`, `step_id` ni ningun identificador durable.
 
+Todas las formulas de arriba se calculan sobre casos **evaluados**, no sobre el total
+del banco (bloque 1.8): un caso cuyo `ModelPort` levanto una excepcion en el primer
+intento (timeout, limite de tasa, respuesta que no parseo --
+`model_port/openai_adapter.py`) no llega a clasificarse, y se cuenta aparte como falla
+operativa. `passes_thresholds()` exige `operational_failures == 0`: una corrida con
+fallas operativas no midio el supuesto completo, y ningun umbral compensa eso.
+
 Metricas diagnosticas (no son criterio de aceptacion, solo lectura fina):
 
 | Metrica | Que mide |
@@ -499,11 +506,21 @@ y `prompt_version` juntos, porque se versionan por separado pero se evaluan junt
 (`14_contratos_formato.md` seccion 11).
 
 `querypilot-eval run <conexion>` (`interpretation/evaluation_cli.py`) carga el
-artefacto, lo valida, carga el banco y arma el reporte -- pero se detiene con un
-mensaje explicito antes de invocar ningun modelo: bloque 1.7 entrega el instrumento
-completo, probado entero con `DeterministicModelPort`
-(`tests/interpretation/evaluation/`); la implementacion real de `ModelPort` con
-proveedor y clave es bloque 1.8.
+artefacto, lo valida, carga el banco, corre la evaluacion contra el `ModelPort` que
+resuelva `model_port/factory.py` (`QP_MODEL_PROVIDER`/`QP_MODEL_NAME`/
+`OPENAI_API_KEY`, bloque 1.8) y escribe el reporte con `--report <ruta>`. Con
+`--history-dir <ruta>` ademas guarda una copia nombrada
+`<semantic_version>__<prompt_version>__<timestamp>.md` y avisa cuantas versiones
+semanticas distintas se evaluaron hasta ahora -- el limite de tres iteraciones de
+`01_metodo_solucion.md` seccion 12 es una decision que registra una persona, no algo
+que el comando bloquee. El banco de casos nunca se escribe desde codigo: `run` solo
+lo lee.
+
+Todo el mecanismo -- carga, comparador, metricas, reintento, fallas operativas,
+registro -- esta probado entero con `DeterministicModelPort` y con un adaptador de
+OpenAI mockeado (`tests/interpretation/evaluation/`, `tests/model_port/unit/`), sin
+red ni clave. La primera corrida real contra el modelo es la decision que se toma y se
+registra al cerrar el bloque 1.8.
 
 ---
 

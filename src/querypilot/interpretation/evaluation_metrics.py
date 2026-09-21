@@ -11,6 +11,15 @@ cierre del bloque 1.7 (01_metodo_solucion.md seccion 12,
 - B1+B2 = plan valido al primer intento o tras un unico reintento / total
   plan_expected
 
+Todas las formulas se calculan sobre `verdicts` -- es decir, sobre los casos
+**evaluados**. Bloque 1.8: un caso cuyo primer intento nunca llego a
+clasificarse porque `ModelPort` exploto (timeout, limite de tasa, respuesta
+que no parseo) no entra a `verdicts`; se cuenta aparte en
+`operational_failures`, y `total_cases = evaluated_cases + operational_failures`.
+`passes_thresholds` exige `operational_failures == 0`: una corrida con fallas
+operativas no mide el supuesto, lo mide a medias, y no hay umbral que
+compense eso.
+
 Diagnosticos (no son criterio de aceptacion, solo lectura fina):
 objective_accuracy, concept_accuracy, clarification_rate,
 out_of_scope_accuracy, inheritance_accuracy, plan_validity (alias de B1).
@@ -38,7 +47,12 @@ class MetricValue(BaseModel):
 class EvaluationReport(BaseModel):
     semantic_version: str
     prompt_version: str
+    provider: str
+    model: str
     total_cases: int
+    evaluated_cases: int
+    operational_failures: int
+    operational_failure_case_ids: tuple[str, ...] = ()
 
     a1_correct_without_clarification: MetricValue
     a2_silent_error: MetricValue
@@ -70,7 +84,10 @@ B1_PLUS_B2_THRESHOLD = 0.98
 
 def passes_thresholds(report: EvaluationReport) -> bool:
     """Las cinco metricas deben superar su umbral. Si A2 falla, no hay
-    compensacion posible por las demas (01 seccion 12)."""
+    compensacion posible por las demas (01 seccion 12). Una corrida con
+    fallas operativas tampoco acepta: no evaluo el banco completo."""
+    if report.operational_failures != 0:
+        return False
     a1 = report.a1_correct_without_clarification.ratio
     a2 = report.a2_silent_error.ratio
     a4 = report.a4_false_out_of_scope.ratio
@@ -88,7 +105,12 @@ def passes_thresholds(report: EvaluationReport) -> bool:
 
 
 def build_report(
-    verdicts: tuple[CaseVerdict, ...], semantic_version: str, prompt_version: str
+    verdicts: tuple[CaseVerdict, ...],
+    semantic_version: str,
+    prompt_version: str,
+    provider: str,
+    model: str,
+    operational_failure_case_ids: tuple[str, ...] = (),
 ) -> EvaluationReport:
     plan_expected = [v for v in verdicts if v.category in PLAN_EXPECTED_CATEGORIES]
     not_out_of_scope = [v for v in verdicts if v.category is not CaseCategory.OUT_OF_SCOPE]
@@ -130,7 +152,12 @@ def build_report(
     return EvaluationReport(
         semantic_version=semantic_version,
         prompt_version=prompt_version,
-        total_cases=len(verdicts),
+        provider=provider,
+        model=model,
+        total_cases=len(verdicts) + len(operational_failure_case_ids),
+        evaluated_cases=len(verdicts),
+        operational_failures=len(operational_failure_case_ids),
+        operational_failure_case_ids=operational_failure_case_ids,
         a1_correct_without_clarification=a1,
         a2_silent_error=a2,
         a4_false_out_of_scope=a4,
