@@ -77,6 +77,13 @@ mensajes: es un objeto estructurado.
 | Ultima referencia | ds_301, con sus tres contribuyentes principales |
 | Version semantica | sem_v7 |
 
+> **Nota de implementacion.** `AnalyticalState` ya esta modelado en
+> `canonical_language/shared_values.py`, antes de que `analysis_session/` exista como
+> caja: `07_parte_interpretacion.md` (`reference_resolver`, bloque 1.6) lo necesita
+> como entrada antes que Sesion llegue a persistirlo. Vive en `canonical_language/`
+> por el mismo motivo que el resto del vocabulario compartido -- lo consumen dos
+> partes que no deben depender una de la otra.
+
 ### Reglas de actualizacion
 
 | Situacion | Efecto sobre el estado analitico |

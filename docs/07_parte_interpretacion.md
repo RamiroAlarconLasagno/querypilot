@@ -61,6 +61,16 @@ todo plan condicional fallaria la validacion estatica. Es una dependencia real e
 la ficha de operacion y esta parte, y es la razon por la que "hechos publicados" es un
 campo obligatorio de la ficha.
 
+### Catalogo de objetivos recibido: solo los verificables
+
+El catalogo de objetivos que Interpretacion recibe **excluye cualquier objetivo sin
+criterio de suficiencia verificable** -- hoy, solo `explore`
+(`10_parte_operaciones.md` seccion 2). Sin un criterio, el Ejecutor nunca sabria
+cuando darlo por satisfecho. Si una propuesta llegara igual con un objetivo excluido
+-- algo que en operacion normal no deberia ocurrir, dado que nunca aparecio en el
+catalogo que el modelo recibio -- se rechaza con la causa `objective_not_available`
+(`14_contratos_formato.md` seccion 7), como defensa, no como camino esperado.
+
 ### Lo que no recibe
 
 - Datos de negocio. Ni filas, ni cifras, ni muestras.
@@ -174,6 +184,36 @@ por defecto, que es exactamente lo que la aclaracion venia a evitar.
 
 Las opciones ofrecidas se construyen **con conceptos del catalogo recibido**, por lo
 que nunca ofrecen algo que el usuario no puede ver.
+
+### Verificacion determinista de la materialidad declarada
+
+La regla tiene dos mitades con dueños distintos. *"Distintas resoluciones producen
+respuestas distintas"* no es verificable sin ejecutar la pregunta, y Interpretacion no
+ejecuta nada (seccion 8): esa mitad queda confiada al modelo, sin contraverificacion
+posible. *"No existe un valor por defecto declarado"* **si** es mecanico: cuando
+`MaterialAmbiguity.expression` esta presente (14_contratos_formato.md seccion 8), el
+sistema puede consultar `default_sense_of` de las metricas del artefacto semantico.
+
+El sistema **nunca decide materialidad de forma positiva** -- no tiene con que. Solo
+puede **refutar** una ambiguedad que el modelo declaro material cuando existe una
+acepcion por defecto inequivoca para `expression`. En ese caso no modifica la
+propuesta ni construye un plan en su nombre: devuelve un rechazo corregible ("`ventas`
+ya tiene sentido por defecto declarado: `net_revenue`"), que consume el unico
+reintento de planificacion ya existente (`09_parte_ejecutor.md` seccion 4). El modelo
+vuelve a proponer, ahora informado.
+
+### Verificacion determinista de las referencias resueltas
+
+`reference_resolver` tiene la misma limitacion de fondo: no puede confirmar que la
+`resolution` de una `ResolvedReference` sea correcta -- comparar ese texto contra el
+estado analitico o el historial es la misma heuristica de texto que se evito arriba.
+Lo unico verificable sin heuristicas es que **exista algun contexto** del cual la
+referencia pudiera haberse resuelto (`last_reference` del estado analitico, o
+historial conversacional no vacio). Si una propuesta trae referencias resueltas sin
+ningun contexto disponible, la referencia es imposible por construccion -- no una
+cuestion de acierto del modelo -- y se rechaza con `reference_without_context`,
+acción `clarify`: coherente con la fila de la seccion 5, *"esos tres" sin referente
+localizable en el historial -> Aclaracion*.
 
 ---
 
@@ -424,8 +464,10 @@ el instrumento con el que se mide.
 
 1. **Profundidad del historial conversacional** que se entrega para resolver
    referencias. Demasiado poco rompe las continuaciones; demasiado encarece cada turno.
-2. **Como se declara una acepcion por defecto** en la capa semantica, que es lo que
-   convierte una ambiguedad en no material.
+2. ~~Como se declara una acepcion por defecto en la capa semantica~~ **Resuelto**:
+   `Metric.default_sense_of` (bloque 1.2, `06_parte_conocimiento_negocio.md` seccion
+   6) ya lo implementa y lo valida `check_default_sense_points_to_existing_concept`.
+   Consumido deterministamente por `ambiguity_detector` en la seccion 5 de esta parte.
 3. **Tamano minimo del banco de casos** para que la regresion sea significativa.
 4. **Umbral de materialidad** de una ambiguedad: hasta que punto una diferencia de
    resolucion justifica molestar al usuario.
