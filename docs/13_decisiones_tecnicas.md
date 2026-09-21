@@ -23,6 +23,7 @@ Verificadas en agosto de 2026. **Los pines exactos viven en `uv.lock`**; en
 | ruff | 0.16.3 | `>=0.16` | Ver seccion 3 |
 | mypy | 1.20.1 | `>=1.20` | Modo estricto |
 | PostgreSQL | 17 | — | Misma version en Compose y CI |
+| openai | 3.16.2 (agregada en el bloque 1.8, septiembre 2026) | `>=3.16.2` | SDK del proveedor real, `model_port/openai_adapter.py` |
 
 **Regla:** ninguna version se cita de memoria. Antes de agregar o subir una dependencia,
 verificar la version publicada.
@@ -111,6 +112,49 @@ automatico—.
 **Corolario de evaluacion:** prompt y artefacto semantico se versionan por separado pero
 se evaluan juntos. Una corrida mide la combinacion; un resultado solo es comparable
 contra otro que varie uno de los dos, nunca los dos a la vez.
+
+### 6bis. Structured Outputs estricto, degradado en el MVP 1 (bloque 1.8)
+
+La fila "Salida estructurada por esquema derivado de Pydantic" de la tabla anterior
+asumia el modo **estricto** de Structured Outputs de OpenAI: el JSON Schema se deriva
+del modelo Pydantic y **restringe la generacion**, token a token, hasta garantizar que
+la salida cumple la forma.
+
+Ese modo estricto exige que todo objeto del esquema declare sus propiedades por
+adelantado (`additionalProperties: false` obligatorio). `ProposedPlanStep.arguments:
+dict[str, DomainValue]` (`model_port/structured_output.py`, dentro de
+`InterpretationOutput`) es un diccionario de **claves libres** -- cada operacion del
+catalogo tiene sus propios parametros -- y no es representable en ese subconjunto de
+JSON Schema. Pasar `InterpretationOutput` tal cual a un generador de esquema estricto
+falla antes de llegar a llamar al modelo.
+
+**Decision para el MVP 1: no se toca `ProposedPlanStep.arguments`.** Cambiarlo a campos
+fijos o a una union discriminada por operacion resuelve el problema pero reabre un
+contrato ya cerrado (bloques 1.5/1.6) para acomodar una limitacion de un proveedor, y
+el costo no se justifica para probar el supuesto mas riesgoso. En su lugar,
+`model_port/openai_adapter.py` usa el modo JSON simple (`{"type": "json_object"}`, sin
+schema estricto) y valida la respuesta explicitamente:
+
+```
+modelo -> texto/JSON -> InterpretationOutput.model_validate_json(...) -> validacion deterministica
+```
+
+El esquema (`model_json_schema()` del tipo Pydantic) viaja como texto dentro de las
+instrucciones -- OpenAI no genera JSON sin que se le pida. Lo que se pierde es la
+garantia de forma **a nivel de API**; lo que no cambia es que la forma nunca garantizo
+verdad ("el esquema garantiza forma, no verdad", arriba): la validacion real sigue
+pasando por Pydantic primero y por los validadores deterministas de Interpretacion
+despues, igual que si la API hubiera devuelto la forma correcta de entrada.
+
+Un fallo de parseo (JSON invalido, o JSON valido que no cumple el esquema) es una
+**falla operativa** del adaptador -- se propaga como excepcion
+(`ModelOutputParseError`), nunca como `Rejection`: un rechazo es un resultado de
+dominio sobre una propuesta bien formada, y esto no llega a serlo.
+
+| Senal de invalidacion de esta decision | Que hacer |
+|---|---|
+| El modo JSON simple produce una tasa de fallo de parseo alta en la practica | Reabrir la discusion de A/B/C con datos reales de la corrida, no en abstracto |
+| Un bloque posterior necesita Structured Outputs estricto para otra cosa | Resolver `arguments` entonces, con el costo justificado por mas de un caso de uso |
 
 ---
 

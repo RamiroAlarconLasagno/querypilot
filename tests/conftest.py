@@ -17,6 +17,8 @@ from collections.abc import Iterator
 
 import pytest
 
+from querypilot.model_port.deterministic_double import DeterministicModelPort
+
 
 @pytest.fixture(scope="session")
 def system_db_url() -> str:
@@ -33,19 +35,21 @@ def sin_claves_de_modelo(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 
     Se usa en la prueba estructural que verifica que la suite de contrato pasa
     sin claves. Convierte la regla en una propiedad ejercitada en vez de una
-    intencion declarada.
+    intencion declarada. `QP_MODEL_API_KEY` no es el nombre real de ninguna
+    variable que el codigo lea (es `OPENAI_API_KEY`, que el SDK de OpenAI ya
+    toma solo); se limpia igual por si algun proveedor futuro la usara.
     """
-    for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "QP_MODEL_API_KEY"):
+    for var in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "QP_MODEL_API_KEY", "QP_MODEL_NAME"):
         monkeypatch.delenv(var, raising=False)
     monkeypatch.setenv("QP_MODEL_PROVIDER", "doble")
     yield
 
 
 @pytest.fixture
-def modelo_doble() -> object:
-    """Doble determinista del puerto del modelo.
+def modelo_doble() -> DeterministicModelPort:
+    """Doble determinista del puerto del modelo, sin salida configurada.
 
-    Devuelve salidas fijas. Permite verificar el contrato entero de
-    Interpretacion y Sintesis sin red, sin coste y sin variabilidad.
+    Quien lo use debe configurar `interpretation_output`/`synthesis_output`
+    segun el caso -- este fixture solo evita repetir la construccion.
     """
-    pytest.skip("Se implementa en el sub-peldano 5.1")
+    return DeterministicModelPort()
