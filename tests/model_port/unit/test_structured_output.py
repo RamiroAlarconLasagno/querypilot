@@ -11,19 +11,23 @@ from decimal import Decimal
 
 from querypilot.analytics.objective_catalog import ObjectiveName
 from querypilot.analytics.operation_catalog import OperationName
-from querypilot.business_knowledge.semantic_artifact import Granularity
+from querypilot.canonical_language.shared_values import (
+    Binding,
+    Condition,
+    ConditionOperator,
+    FilterOperator,
+    Granularity,
+    SortDirection,
+    ThresholdName,
+)
 from querypilot.model_port.structured_output import (
     AnswerSection,
     Assertion,
     AssertionKind,
-    Binding,
     ConceptMapping,
-    Condition,
-    ConditionOperator,
     Continuity,
     ContinuityMode,
     CrossObjectiveAssertion,
-    FilterOperator,
     InheritedField,
     InterpretationOutput,
     MaterialAmbiguity,
@@ -33,9 +37,7 @@ from querypilot.model_port.structured_output import (
     ProposedPlanStep,
     ResearchSuggestion,
     ResolvedReference,
-    SortDirection,
     SynthesisOutput,
-    ThresholdName,
 )
 
 

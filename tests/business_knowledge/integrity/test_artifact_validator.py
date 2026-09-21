@@ -29,13 +29,13 @@ from querypilot.business_knowledge.semantic_artifact import (
     Connection,
     Dimension,
     DimensionPhysical,
-    Granularity,
     Metric,
     MetricPhysical,
     SemanticArtifact,
     Thresholds,
     load_semantic_artifact,
 )
+from querypilot.canonical_language.shared_values import Granularity
 
 DEMO_DIR = Path(__file__).resolve().parents[3] / "semantic" / "demo"
 

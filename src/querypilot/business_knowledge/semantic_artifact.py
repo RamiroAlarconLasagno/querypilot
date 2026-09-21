@@ -17,6 +17,8 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from querypilot.canonical_language.shared_values import Granularity
+
 
 class CalendarType(StrEnum):
     CALENDAR = "calendar"
@@ -28,15 +30,6 @@ class Aggregation(StrEnum):
     COUNT = "count"
     DISTINCT_COUNT = "distinct_count"
     AVERAGE = "average"
-
-
-class Granularity(StrEnum):
-    DAY = "day"
-    WEEK = "week"
-    MONTH = "month"
-    QUARTER = "quarter"
-    YEAR = "year"
-    TOTAL = "total"
 
 
 class Calendar(BaseModel):
