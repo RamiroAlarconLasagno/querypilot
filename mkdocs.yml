@@ -1,0 +1,61 @@
+# mkdocs.yml
+# Manual de QueryPilot (MVP 1). No confundir con docs/: esa carpeta contiene los
+# documentos numerados de especificacion (arquitectura, contratos, decisiones) que
+# gobiernan la implementacion y las sesiones de desarrollo asistidas por IA -- ver
+# docs/00_INDICE.md. Este sitio es la presentacion/manual para quien quiere entender
+# y probar QueryPilot sin necesitar ese nivel de detalle interno.
+#
+# docs_dir apunta a manual/, no a docs/, a proposito: si MkDocs sirviera desde docs/
+# construiria tambien los 17 documentos numerados de especificacion, mezclando dos
+# audiencias y dos propositos distintos. Mantenerlos separados evita esa mezcla sin
+# necesitar un plugin de exclusion.
+#
+# Arrancar:  uv run mkdocs serve
+# Generar:   uv run mkdocs build
+
+site_name: QueryPilot — Manual (MVP 1)
+site_description: >-
+  Manual y presentacion del primer MVP de QueryPilot: que es, que problema resuelve,
+  como probarlo y que evidencia respalda que funciona.
+site_dir: site
+docs_dir: manual
+
+theme:
+  name: material
+  language: es
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: Cambiar a modo oscuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Cambiar a modo claro
+  features:
+    - navigation.instant
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+
+nav:
+  - Inicio: index.md
+  - Guía rápida: guia_rapida.md
+  - Artefacto semántico: artefacto_semantico.md
+  - Cómo interpreta preguntas: interpretacion.md
+  - Evaluación: evaluacion.md
+  - Calidad y reproducibilidad: calidad.md
+  - Limitaciones del MVP 1: limitaciones.md
+  - Próximos pasos: proximos_pasos.md

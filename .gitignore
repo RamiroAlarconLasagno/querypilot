@@ -17,6 +17,9 @@ htmlcov/
 exports/
 *.log
 
+# Sitio generado por MkDocs (uv run mkdocs build); manual/ es la fuente versionada.
+site/
+
 # Estado local/operativo derivado de artefactos semanticos: el contenido
 # versionado sigue siendo la fuente para calcular semantic_version, esto
 # solo marca que version quedo publicada en esta ejecucion/entorno.
