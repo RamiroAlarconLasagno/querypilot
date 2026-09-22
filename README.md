@@ -36,27 +36,77 @@ sin tener que comprobarlas a mano**.
 
 ## Estado
 
-En desarrollo. El primer MVP se implementa de forma incremental, cerrando cada bloque con
-contratos, tests y verificacion estatica antes de avanzar al siguiente.
+**QueryPilot — MVP 1 · Estado: experimental.**
 
-**Completado hasta ahora:**
+El proyecto se construye en bloques incrementales, cerrando cada uno con contratos,
+tests y verificacion estatica antes de avanzar. El primer MVP prueba el supuesto mas
+riesgoso del proyecto:
 
-- lenguaje canonico e identificadores base;
-- carga tipada del artefacto semantico;
-- validador de integridad del artefacto;
-- version semantica derivada del contenido;
-- comandos `validate` y `publish` para el artefacto semantico.
+> ¿Puede un modelo de lenguaje, apoyado en una capa semantica bien definida, convertir
+> preguntas reales de negocio en propuestas estructuradas validas, de forma confiable?
 
-**Peldano actual:** 5.1 — probar el supuesto mas riesgoso del proyecto.
+**Implementado hasta ahora:**
 
-> ¿Puede un modelo convertir preguntas reales de negocio en propuestas estructuradas
-> validas, con una capa semantica bien definida?
+- lenguaje canonico y contratos tipados;
+- artefacto semantico versionado, con validador de integridad y version derivada del
+  contenido;
+- catalogos cerrados de objetivos y operaciones analiticas;
+- puerto del modelo de lenguaje: doble determinista para pruebas y adaptador real
+  sobre OpenAI;
+- Interpretacion: propuesta estructurada, validacion determinista, construccion de
+  `AnalysisPlan`, replanificacion;
+- banco congelado de 60 casos de evaluacion, con las metricas A1, A2, A4, B1 y B1+B2;
+- CLI de evaluacion, con reportes auditables y un guardarrail de hasta tres
+  iteraciones experimentales sobre el artefacto semantico;
+- manual navegable con MkDocs (ver mas abajo).
 
-Se medira con un banco de 60 preguntas congelado. Umbral duro: **error silencioso <= 5 %**.
-Un sistema que pregunta es usable; uno que se equivoca con confianza no lo es, por alta
-que sea su exactitud promedio.
+El flujo que existe hoy llega hasta acá:
 
-Ver `MAPA_AVANCE.md`.
+```
+pregunta en lenguaje natural
+  -> interpretacion estructurada
+  -> validacion determinista
+  -> AnalysisPlan
+  -> evaluacion contra el banco de 60 casos
+```
+
+**QueryPilot todavia no ejecuta ese plan contra una base de datos real.** La
+ejecucion de operaciones, el acceso real a datos y las etapas posteriores (sintesis
+de respuesta, sesion, API publica) quedan para el MVP 2 en adelante.
+
+La corrida real del banco de 60 casos contra OpenAI **todavia esta pendiente**: el
+instrumento esta completo y probado con un doble determinista, pero correrla de
+verdad consume la API y tiene costo, asi que es una decision deliberada, no una
+tarea sin terminar. Umbral duro de esa corrida cuando ocurra: **error silencioso
+<= 5 %** — un sistema que pregunta es usable; uno que se equivoca con confianza no
+lo es, por alta que sea su exactitud promedio.
+
+Ver `MAPA_AVANCE.md` para el detalle vivo de que esta cerrado y que falta.
+
+---
+
+## Documentacion navegable (manual)
+
+Ademas de este README, el repositorio tiene un manual navegable construido con
+**MkDocs + Material**: presenta el MVP 1 con ejemplos, capturas y explicaciones
+pensadas para alguien que no necesita conocer la arquitectura interna.
+
+```bash
+uv run mkdocs serve          # http://127.0.0.1:8000, con recarga en vivo
+uv run mkdocs build --strict # genera el sitio estatico en site/
+```
+
+Tres capas de documentacion, cada una con un proposito distinto:
+
+| Capa | Para que sirve |
+|---|---|
+| `README.md` (este archivo) | Vision rapida del repositorio: que es, como instalarlo, donde seguir |
+| `manual/` (servido con MkDocs) | Guia de uso y presentacion del MVP 1: ejemplos, evaluacion, limitaciones |
+| `docs/` | Especificacion tecnica: contratos, decisiones de arquitectura, invariantes |
+
+`manual/` no reemplaza a `docs/`: cuando algo tecnico hace falta para entender el
+producto, el manual lo resume en lenguaje llano y enlaza al documento interno
+correspondiente, que sigue siendo la fuente de verdad.
 
 ---
 
@@ -76,15 +126,17 @@ El flujo de trabajo es incremental:
 4. Cada bloque se valida con tests, `ruff` y `mypy`.
 5. Solo despues de cerrar la unidad se realiza el commit.
 
-La IA no es la fuente de verdad del proyecto: **los contratos, los tests y la documentacion
-versionada determinan que comportamiento es valido**.
+La IA es una herramienta de implementacion y revision, no la fuente de verdad del
+proyecto: **los contratos, los tests, la documentacion versionada, los invariantes y
+las decisiones registradas determinan que comportamiento es valido**, no lo que un
+agente haya producido en una sesion.
 
 ---
 
 ## Arranque rapido
 
-En el estado actual del MVP se puede validar y publicar el artefacto semantico sin levantar
-la infraestructura completa.
+En el estado actual del MVP se puede validar y publicar el artefacto semantico, y
+correr el banco de evaluacion, sin levantar infraestructura completa.
 
 Requiere Python 3.13 y [uv](https://docs.astral.sh/uv/).
 
@@ -94,13 +146,21 @@ cd querypilot
 
 uv sync
 
+# artefacto semantico: validar y publicar (ver manual para el detalle)
 uv run querypilot-semantic validate demo
 uv run querypilot-semantic publish demo
 
-uv run ruff check .
+# instrumento de evaluacion (sin clave configurada, corre igual -- ver el manual)
+uv run querypilot-eval --help
+
+# verificacion determinista, sin modelo de lenguaje
+uv run ruff check src tests
 uv run mypy src
 uv run pytest
 ```
+
+Para una guia paso a paso con ejemplos y capturas, correr el manual localmente
+(`uv run mkdocs serve`) o ver `manual/` directamente.
 
 Docker, PostgreSQL y la API completa se incorporan progresivamente en los siguientes
 bloques del plan de implementacion.
@@ -146,10 +206,11 @@ Ninguna extension prevista toca el Ejecutor.
 
 ## Stack
 
-**En uso actualmente:** Python 3.13 · Pydantic v2 · Typer · uv · ruff · mypy · pytest
+**En uso actualmente:** Python 3.13 · Pydantic v2 · Typer · uv · ruff · mypy · pytest ·
+OpenAI SDK (adaptador real de `ModelPort`) · MkDocs + Material (manual) · GitHub
+Actions (CI y evaluacion manual)
 
-**Arquitectura prevista:** FastAPI · SQLAlchemy 2 · Alembic · PostgreSQL 17 · Docker ·
-GitHub Actions
+**Arquitectura prevista:** FastAPI · SQLAlchemy 2 · Alembic · PostgreSQL 17 · Docker
 
 En la arquitectura final, la base de negocio usa una conexion de **solo lectura verificada
 al conectar**, que es lo que impide escribir por accidente en la base del cliente.
@@ -176,6 +237,11 @@ Dos flujos con fronteras nitidas:
 uv sync -> ruff -> mypy -> pytest -> validar artefacto semantico
 ```
 
+Estado observado: **ruff y `ruff format` limpios**, **mypy sin errores sobre `src`**,
+**181 tests de pytest aprobados**, sin ninguna clave de modelo configurada. Esa cifra
+corresponde al estado del repositorio en el bloque cerrado mas reciente y va a crecer
+con cada bloque nuevo — correr `uv run pytest` muestra el numero vigente.
+
 ### Flujo objetivo del sistema completo
 
 ```text
@@ -195,6 +261,7 @@ la implementacion y los agentes de desarrollo.
 
 | Documento | Contenido |
 |---|---|
+| `manual/` (servido con MkDocs) | Manual de uso y presentacion del MVP 1 — ver "Documentacion navegable" arriba |
 | `MAPA_AVANCE.md` | Donde estamos, que falta, supuestos activos |
 | `docs/00_INDICE.md` | Indice y reglas de carga |
 | `docs/01_metodo_solucion.md` | Dominio, invariantes, decisiones de sistema, trazas, supuesto riesgoso |
